@@ -687,7 +687,7 @@
 
   <!-- Krokový indikátor -->
   <div class="steps">
-    <div class="step active" id="epri-step1"><div class="step-num">1</div><span>Fotografie</span></div>
+    <div class="step active" id="epri-step1"><div class="step-num">1</div><span>Zdroj</span></div>
     <div class="step-line" id="epri-line1"></div>
     <div class="step" id="epri-step2"><div class="step-num">2</div><span>Kontrola</span></div>
     <div class="step-line" id="epri-line2"></div>
@@ -697,8 +697,30 @@
   <!-- KROK 1 -->
   <div id="epri-step1-section">
     <div class="msg-box error" id="epri-error-box"><strong>Chyba:</strong><ul id="epri-error-list"></ul></div>
+
+    <!-- Možnost A: XML z výdejky -->
     <div class="card">
-      <h2>Nahrání ručně psaného seznamu</h2>
+      <h2>Možnost A — nahrát XML z výdejky položkové</h2>
+      <p style="font-size:13px;color:#555;margin:0 0 12px">Vyberte XML soubor vygenerovaný záložkou <strong>Výdejka položková</strong>. Automaticky se vyberou jen položky, jejichž kód obsahuje písmeno <strong>E</strong>.</p>
+      <div class="drop-zone" id="epri-xml-drop"
+           onclick="document.getElementById('epri-xml-input').click()"
+           ondragover="event.preventDefault();this.classList.add('over')"
+           ondragleave="this.classList.remove('over')"
+           ondrop="epriHandleXmlDrop(event)">
+        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="16,18 22,12 16,6"/><polyline points="8,6 2,12 8,18"/>
+        </svg>
+        Přetáhněte XML soubor sem nebo klikněte pro výběr
+      </div>
+      <input type="file" id="epri-xml-input" accept=".xml" style="display:none" onchange="epriHandleXmlFile(event)">
+      <div id="epri-xml-status" style="margin-top:8px;font-size:13px;color:#555"></div>
+    </div>
+
+    <div style="text-align:center;color:#aaa;font-size:13px;margin:4px 0">— nebo —</div>
+
+    <!-- Možnost B: Fotografie -->
+    <div class="card">
+      <h2>Možnost B — nahrát fotografii ručně psaného seznamu</h2>
       <div class="drop-zone" id="epri-photo-drop"
            onclick="document.getElementById('epri-photo-input').click()"
            ondragover="event.preventDefault();this.classList.add('over')"
@@ -716,8 +738,10 @@
         <div class="spinner"></div>
         <div id="epri-ai-status">AI čte seznam...</div>
       </div>
+      <div style="margin-top:10px">
+        <button class="btn-primary" id="epri-read-btn" onclick="epriReadWithAI()" disabled>Přečíst s AI →</button>
+      </div>
     </div>
-    <button class="btn-primary" id="epri-read-btn" onclick="epriReadWithAI()" disabled>Přečíst s AI →</button>
   </div>
 
   <!-- KROK 2 -->
@@ -3621,7 +3645,7 @@ function epriBuildReviewTable(aiItems){
   aiItems.forEach((item,idx)=>{
     const match = vydMatchCode(item.code||'');
     if(!match.found && item.code) unknown.push(item.code);
-    epriAppendRow(tbody, idx+1, item.code||'', match, item.quantity||1);
+    epriAppendRow(tbody, idx+1, item.code||'', match, item.quantity||item.qty||1);
   });
   const warnEl = document.getElementById('epri-unknown-warn');
   if(warnEl){
@@ -3768,6 +3792,52 @@ function epriGenerate(){
     } else { warnBox.style.display='none'; }
   } else { warnBox.style.display='none'; }
   window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function epriHandleXmlDrop(e){
+  e.preventDefault(); document.getElementById('epri-xml-drop').classList.remove('over');
+  const f = e.dataTransfer.files[0]; if(f) epriLoadXmlFile(f);
+}
+function epriHandleXmlFile(e){
+  const f = e.target.files[0]; if(f) epriLoadXmlFile(f); e.target.value='';
+}
+function epriLoadXmlFile(file){
+  const statusEl = document.getElementById('epri-xml-status');
+  statusEl.textContent = 'Načítám XML...';
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(ev.target.result, 'application/xml');
+      const parseErr = doc.querySelector('parsererror');
+      if(parseErr) throw new Error('Soubor není platné XML.');
+
+      // Najdi všechny vydejkaItem elementy
+      const items = [...doc.querySelectorAll('vydejkaItem')].map(el => {
+        const qty = parseFloat(el.querySelector('quantity')?.textContent||'1')||1;
+        const ids = el.querySelector('stockItem > stockItem > ids')?.textContent?.trim()||
+                    el.querySelector('ids')?.textContent?.trim()||'';
+        return {code: ids, qty};
+      }).filter(it => it.code && /e/i.test(it.code));  // jen kódy s písmenem E
+
+      if(!items.length){
+        statusEl.innerHTML = '⚠ Žádné položky s písmenem E v kódu nebyly nalezeny.';
+        return;
+      }
+
+      statusEl.innerHTML = `✅ Načteno ${items.length} položek s E v kódu — přechod na kontrolu.`;
+      setTimeout(() => {
+        epriBuildReviewTable(items);
+        document.getElementById('epri-step1-section').style.display='none';
+        document.getElementById('epri-step2-section').style.display='block';
+        epriSetStep(2);
+        window.scrollTo({top:0,behavior:'smooth'});
+      }, 600);
+    } catch(err) {
+      statusEl.textContent = '✗ Chyba: ' + err.message;
+    }
+  };
+  reader.readAsText(file, 'windows-1250');
 }
 
 function epriDownloadXml(){
