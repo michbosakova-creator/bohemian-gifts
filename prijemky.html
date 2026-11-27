@@ -1,0 +1,1672 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Příjemky XML — Bohemian Gifts</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Segoe UI', Tahoma, Geneva, sans-serif; background: #f0f2f5; color: #222; min-height: 100vh; }
+header { background: #1a3a5c; color: white; padding: 18px 32px; display: flex; align-items: center; gap: 14px; }
+header h1 { font-size: 1.25rem; font-weight: 600; }
+header .badge { background: #e8a020; color: white; font-size: 0.7rem; padding: 3px 8px; border-radius: 12px; font-weight: 700; letter-spacing: 0.5px; }
+.container { max-width: 980px; margin: 0 auto; padding: 28px 20px; }
+.card { background: white; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); padding: 24px; margin-bottom: 20px; }
+.card h2 { font-size: 0.95rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: #1a3a5c; margin-bottom: 16px; border-bottom: 2px solid #e8f0fb; padding-bottom: 10px; }
+.form-row { display: flex; gap: 16px; flex-wrap: wrap; }
+.form-group { display: flex; flex-direction: column; gap: 6px; flex: 1; min-width: 150px; }
+label { font-size: 0.82rem; font-weight: 600; color: #555; }
+input[type="text"], input[type="date"], input[type="password"], input[type="number"] {
+  padding: 9px 12px; border: 1.5px solid #d0d7e0; border-radius: 6px;
+  font-size: 0.92rem; font-family: inherit; transition: border-color 0.2s; color: #222;
+}
+input:focus { outline: none; border-color: #1a3a5c; }
+select { padding: 9px 12px; border: 1.5px solid #d0d7e0; border-radius: 6px; font-size: 0.92rem; font-family: inherit; color: #222; background: white; cursor: pointer; }
+.drop-zone { border: 2px dashed #c5d8f5; border-radius: 8px; padding: 32px 20px; text-align: center; cursor: pointer; transition: all 0.2s; background: #fafcff; color: #888; font-size: 0.88rem; margin-bottom: 14px; }
+.drop-zone:hover, .drop-zone.over { border-color: #1a3a5c; background: #eef4ff; color: #1a3a5c; }
+.btn-primary { padding: 11px 22px; background: #1a3a5c; color: white; border: none; border-radius: 8px; font-size: 0.95rem; font-weight: 700; cursor: pointer; transition: background 0.2s; }
+.btn-primary:hover { background: #14305a; }
+.btn-primary:disabled { background: #aab8c8; cursor: not-allowed; }
+.btn-primary.green { background: #27ae60; }
+.btn-primary.green:hover { background: #219150; }
+.btn-sm { padding: 5px 11px; border: 1.5px solid #d0d7e0; border-radius: 5px; background: white; color: #555; font-size: 0.8rem; cursor: pointer; font-family: inherit; white-space: nowrap; }
+.btn-sm:hover { border-color: #1a3a5c; color: #1a3a5c; }
+.btn-sm.danger { border-color: #e74c3c; color: #e74c3c; background: none; }
+.btn-sm.danger:hover { background: #e74c3c; color: white; }
+.customer-card { background: white; border: 2px solid #e0e8f5; border-radius: 10px; padding: 20px; margin-bottom: 16px; }
+.customer-card.has-errors { border-color: #f5c6a0; }
+.cust-title { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+.cust-num { background: #1a3a5c; color: white; border-radius: 50%; width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 700; flex-shrink: 0; }
+.cust-name-input { flex: 1; font-size: 1rem; font-weight: 700; border: 1.5px solid #d0d7e0; border-radius: 6px; padding: 5px 10px; color: #1a3a5c; font-family: inherit; }
+.cust-name-input:focus { outline: none; border-color: #1a3a5c; }
+table { width: 100%; border-collapse: collapse; font-size: 0.84rem; margin: 10px 0; }
+th { background: #f0f4fb; padding: 7px 10px; text-align: left; font-weight: 600; color: #555; border-bottom: 2px solid #e0e8f5; white-space: nowrap; }
+td { padding: 5px 6px; border-bottom: 1px solid #f0f2f5; vertical-align: middle; }
+td input { width: 100%; padding: 4px 7px; border: 1px solid #dde4ef; border-radius: 4px; font-size: 0.83rem; font-family: inherit; }
+td input:focus { outline: none; border-color: #1a3a5c; }
+td input.warn { border-color: #e67e22; background: #fff8f2; }
+.totals-row { font-size: 0.8rem; color: #666; margin-top: 8px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid #c5d8f5; border-top-color: #1a3a5c; border-radius: 50%; animation: spin 0.8s linear infinite; vertical-align: middle; margin-right: 6px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.status { padding: 10px 14px; border-radius: 6px; font-size: 0.88rem; margin-top: 12px; }
+.status.info { background: #e8f4fd; border: 1px solid #bee3f8; color: #1a3a5c; }
+.status.error { background: #fff2f2; border: 1px solid #f5b5b5; color: #c0392b; }
+.status.ok { background: #e8f5e9; border: 1px solid #a5d6a7; color: #1b5e20; }
+.file-chip { display: inline-flex; align-items: center; gap: 7px; background: #e8f0fb; border-radius: 6px; padding: 5px 11px; font-size: 0.82rem; color: #1a3a5c; margin: 3px; }
+.file-chip button { background: none; border: none; cursor: pointer; color: #888; font-size: 13px; padding: 0; line-height: 1; }
+.file-chip button:hover { color: #e74c3c; }
+.hint { font-size: 0.77rem; color: #999; margin-top: 3px; }
+.tab-btn { padding: 13px 22px; background: none; border: none; color: #7fa8cc; font-size: 0.9rem; font-weight: 600; cursor: pointer; border-bottom: 3px solid transparent; transition: all 0.2s; }
+.tab-btn:hover { color: #b8d4ed; }
+.tab-btn.active { color: white; border-bottom-color: #e8a020; }
+.download-bar { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; padding: 18px 24px; background: #1a3a5c; border-radius: 10px; margin-top: 8px; }
+.download-bar span { color: #a0c0e0; font-size: 0.85rem; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Bohemian Gifts — XML nástroje</h1>
+  <span class="badge">Pohoda</span>
+  <div style="margin-left:auto">
+    <button onclick="openSettings()" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:white;border-radius:6px;padding:5px 12px;cursor:pointer;font-size:0.82rem;font-weight:600">⚙ Nastavení</button>
+  </div>
+</header>
+<div style="background:#152e4a;padding:0 32px;display:flex">
+  <a href="pohoda-xml.html" class="tab-btn" style="text-decoration:none;display:flex;align-items:center">Faktura PRECIOSA</a>
+  <a href="pohoda-xml.html#vydejka" class="tab-btn" style="text-decoration:none;display:flex;align-items:center">Výdejka položková</a>
+  <a href="pohoda-xml.html#erpet" class="tab-btn" style="text-decoration:none;display:flex;align-items:center">Komisní prodej Erpet</a>
+  <a href="pohoda-xml.html#renumber" class="tab-btn" style="text-decoration:none;display:flex;align-items:center">Přečíslovat XML</a>
+  <span class="tab-btn active" style="cursor:default">🎄 Příjemky — vánoční ozdoby</span>
+</div>
+
+<!-- Settings modal -->
+<div id="settings-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:1000;align-items:center;justify-content:center">
+  <div style="background:white;border-radius:12px;padding:28px;width:380px;max-width:90vw;box-shadow:0 8px 32px rgba(0,0,0,0.2)">
+    <h2 style="font-size:1rem;font-weight:700;color:#1a3a5c;margin-bottom:20px">⚙ Nastavení aplikace</h2>
+    <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:16px">
+      <label style="font-size:0.82rem;font-weight:600;color:#555">Claude API klíč</label>
+      <input type="password" id="s-api-key" placeholder="sk-ant-…" style="padding:9px 12px;border:1.5px solid #d0d7e0;border-radius:6px;font-size:0.92rem;font-family:inherit">
+    </div>
+    <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:24px">
+      <label style="font-size:0.82rem;font-weight:600;color:#555">Model</label>
+      <select id="s-model" style="padding:9px 12px;border:1.5px solid #d0d7e0;border-radius:6px;font-size:0.92rem;font-family:inherit;background:white">
+        <option value="claude-opus-4-5">Opus — nejlepší pro ruční písmo ⭐</option>
+        <option value="claude-sonnet-4-5">Sonnet — přesnější</option>
+        <option value="claude-haiku-4-5">Haiku — rychlý a levný</option>
+      </select>
+      <span style="font-size:0.77rem;color:#999">Pro čtení skenů doporučujeme Opus</span>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end">
+      <button onclick="closeSettings()" style="padding:8px 18px;border:1.5px solid #d0d7e0;border-radius:6px;background:white;font-size:0.88rem;cursor:pointer">Zavřít</button>
+      <button onclick="saveSettings()" style="padding:8px 18px;background:#1a3a5c;color:white;border:none;border-radius:6px;font-size:0.88rem;font-weight:700;cursor:pointer">Uložit</button>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- Příjemka nastavení -->
+  <div class="card">
+    <h2>📋 Parametry příjemek a faktur</h2>
+    <div style="display:flex;gap:20px;flex-wrap:wrap">
+
+      <!-- XML sekce -->
+      <div style="flex:1;min-width:260px;background:#f5f9ff;border-radius:8px;padding:16px;border:1.5px solid #c8ddf5">
+        <div style="font-size:0.76rem;font-weight:700;text-transform:uppercase;letter-spacing:0.9px;color:#1a3a5c;margin-bottom:14px;padding-bottom:8px;border-bottom:1.5px solid #c8ddf5">🗂 XML příjemky (Pohoda)</div>
+        <div class="form-row">
+          <div class="form-group" style="max-width:180px">
+            <label>Datum příjemek</label>
+            <input type="date" id="receipt-date">
+          </div>
+          <div class="form-group">
+            <label>První číslo příjemky</label>
+            <div style="display:flex;gap:6px;align-items:center">
+              <input type="text" id="first-receipt-number" placeholder="26OL600001" style="flex:1">
+              <button id="num-plus1-btn" title="Doplnit poslední použité +1" style="padding:5px 10px;border:1.5px solid #d0d7e0;border-radius:5px;background:white;cursor:pointer;font-size:12px;white-space:nowrap;color:#1a3a5c;font-weight:600">+1</button>
+              <button id="num-paste-btn" title="Klikni sem a vloží se obrázek ze schránky" style="padding:5px 10px;border:1.5px solid #d0d7e0;border-radius:5px;background:white;cursor:pointer;font-size:13px;white-space:nowrap">📋</button>
+            </div>
+            <span class="hint" id="last-num-hint" style="display:none">Poslední použité: <span id="last-num-display"></span></span>
+            <span class="hint" id="no-last-hint">Další příjemky se číslují automaticky za sebou</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Excel sekce -->
+      <div style="flex:1;min-width:260px;background:#fdf8f0;border-radius:8px;padding:16px;border:1.5px solid #f0d090">
+        <div style="font-size:0.76rem;font-weight:700;text-transform:uppercase;letter-spacing:0.9px;color:#8b6400;margin-bottom:14px;padding-bottom:8px;border-bottom:1.5px solid #f0d090">📊 Excel faktury</div>
+        <div class="form-row">
+          <div class="form-group" style="max-width:180px">
+            <label>Datum vystavení</label>
+            <input type="date" id="invoice-date">
+            <span class="hint">Prázdné = dnešní datum</span>
+          </div>
+          <div class="form-group" style="max-width:160px">
+            <label>První číslo faktury</label>
+            <input type="text" id="first-invoice-number" placeholder="107" style="width:100%">
+            <span class="hint" id="last-invoice-hint" style="display:none">Poslední: <span id="last-invoice-display"></span></span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Nahrát stránky -->
+  <div class="card">
+    <h2>📄 Nahrát stránky (1–2)</h2>
+    <div id="drop-zone" class="drop-zone"
+      onclick="document.getElementById('file-input').click()"
+      ondragover="event.preventDefault();this.classList.add('over')"
+      ondragleave="this.classList.remove('over')"
+      ondrop="handleDrop(event)">
+      <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="display:block;margin:0 auto 10px;opacity:0.4"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      Přetáhněte sem PDF, Excel (.xlsx) nebo obrázky (max. 2 soubory)<br>
+      <span style="font-size:0.8rem;color:#aaa">— nebo klikněte pro výběr —</span>
+    </div>
+    <input type="file" id="file-input" accept=".pdf,.xlsx,.xls,image/*" multiple style="display:none" onchange="handleFiles(this.files)">
+    <div id="uploaded-files"></div>
+    <div style="margin-top:16px;display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+      <button class="btn-primary" id="extract-btn" onclick="extractFromPages()">🔍 Extrahovat zákazníky a položky</button>
+      <button class="btn-sm" id="restore-btn" style="display:none" onclick="restoreLastCustomers()">↩ Obnovit poslední seznam</button>
+    </div>
+    <div id="extract-status"></div>
+  </div>
+
+  <!-- Zadání zákazníků + náhled stránek -->
+  <div id="customers-confirm-section" style="display:none">
+    <div class="card">
+      <h2>👥 Zadejte zákazníky</h2>
+      <div style="display:flex;gap:20px;flex-wrap:wrap;align-items:flex-start">
+        <div style="flex:1;min-width:220px">
+          <p style="font-size:0.88rem;color:#555;margin-bottom:12px">Napište jméno každého zákazníka ze stránky — v pořadí jak jsou za sebou.</p>
+          <div id="customers-confirm-list" style="display:flex;flex-direction:column;gap:6px;margin-bottom:12px"></div>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <button class="btn-sm" onclick="addCustomerConfirmRow('')">+ Přidat zákazníka</button>
+            <button class="btn-primary" style="margin-top:8px" onclick="proceedToStep2()">➜ Potvrdit zákazníky</button>
+          </div>
+        </div>
+        <div id="page-previews" style="flex:2;min-width:280px;display:flex;flex-wrap:wrap;gap:10px"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Potvrzení párování -->
+  <div id="mapping-section" style="display:none">
+    <div class="card" style="border:2px solid #f0a500">
+      <h2>❓ Neznámé položky — potřebuji poradit</h2>
+      <p style="font-size:0.88rem;color:#555;margin-bottom:16px">Tyto názvy jsem na stránce viděla, ale nevím co jsou zač. Vyberte ke každé správnou položku z katalogu — zapamatuji si to natrvalo a příště se ptát nebudu.</p>
+      <div id="mapping-list"></div>
+      <div style="margin-top:16px;display:flex;gap:10px;flex-wrap:wrap">
+        <button class="btn-primary" onclick="confirmMappings()">✅ Potvrdit a pokračovat</button>
+        <button class="btn-sm" onclick="showMappingsManager()" style="background:#f0f4f8;color:#555;border:1.5px solid #d0d7e0;border-radius:6px;padding:6px 14px;cursor:pointer;font-size:0.85rem">🗂 Spravovat zapamatovaná párování</button>
+      </div>
+      <div id="mappings-manager" style="display:none;margin-top:16px;border-top:1px solid #f0d090;padding-top:14px"></div>
+    </div>
+  </div>
+
+  <!-- Přehled zákazníků -->
+  <div id="review-section" style="display:none">
+    <div style="background:#e8f4fd;border:1px solid #bee3f8;border-radius:8px;padding:12px 16px;margin-bottom:16px;font-size:0.88rem;color:#1a3a5c">
+      ✏ Zkontrolujte jména zákazníků, čísla příjemek a položky. Oranžová pole jsou prázdná — vyplňte je před stažením.
+    </div>
+    <div id="customers-list"></div>
+    <div id="validation-panel" style="display:none;background:#fffbea;border:1.5px solid #f0c040;border-radius:8px;padding:12px 16px;margin-bottom:12px;font-size:0.86rem;color:#7a4f00"></div>
+    <div class="download-bar">
+      <button class="btn-primary" onclick="prepareFaktury()" style="background:#3a7bd5">📋 Vygenerovat faktury</button>
+      <button class="btn-primary green" id="btn-dl-faktury" onclick="downloadFaktury()" disabled style="opacity:0.4;cursor:not-allowed">⬇ Stáhnout faktury (ZIP)</button>
+      <button class="btn-primary green" onclick="downloadAllXML()">⬇ XML (ZIP)</button>
+      <button class="btn-primary green" onclick="downloadAllSeparate()">⬇ XML zvlášť</button>
+      <span id="dl-status"></span>
+    </div>
+    <div style="background:#1e3f60;border-radius:8px;padding:14px 18px;margin-top:8px">
+      <div style="color:#a0c8e8;font-size:0.82rem;font-weight:600;margin-bottom:10px">📎 Skeny k fakturám (max. 2 soubory)</div>
+      <div id="scan-drop-zone"
+        onclick="document.getElementById('scan-input').click()"
+        ondragover="event.preventDefault();this.style.borderColor='#7ab8e8';this.style.background='rgba(255,255,255,0.1)'"
+        ondragleave="this.style.borderColor='rgba(255,255,255,0.2)';this.style.background='rgba(255,255,255,0.04)'"
+        ondrop="event.preventDefault();this.style.borderColor='rgba(255,255,255,0.2)';this.style.background='rgba(255,255,255,0.04)';handleScanFiles(event.dataTransfer.files)"
+        style="border:2px dashed rgba(255,255,255,0.2);border-radius:7px;padding:14px 20px;text-align:center;cursor:pointer;background:rgba(255,255,255,0.04);color:rgba(255,255,255,0.5);font-size:0.82rem;transition:all 0.15s">
+        Přetáhněte skeny sem, nebo klikněte pro výběr
+        <input type="file" id="scan-input" accept="image/*,.pdf" multiple style="display:none" onchange="handleScanFiles(this.files)">
+      </div>
+      <div id="scan-chips" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px"></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+if(typeof pdfjsLib !== 'undefined') pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+// Katalog zboží — vánoční ozdoby
+const CATALOG = [
+  {code:'0170', name:'koule 12cm',                               purchase:80,   sell:125},
+  {code:'0370', name:'vajíčko',                                  purchase:22,   sell:36},
+  {code:'0370-01', name:'vajíčko v krabičce',                    purchase:34,   sell:50},
+  {code:'0570', name:'koule 12cm s otvorem a stojánkem',         purchase:150,  sell:220},
+  {code:'0670', name:'koule 6cm',                                purchase:50,   sell:75},
+  {code:'0770', name:'koule 8cm',                                purchase:60,   sell:90},
+  {code:'0870', name:'koule 10cm',                               purchase:70,   sell:110},
+  {code:'1270', name:'koule 12cm se stojánkem',                  purchase:150,  sell:225},
+  {code:'1670', name:'koule 15cm',                               purchase:75,   sell:113},
+  {code:'1870', name:'stojánek skleněný',                        purchase:0,    sell:0},
+  {code:'1970', name:'koule 8cm - bílá',                         purchase:25,   sell:25},
+  {code:'2070', name:'kalíšek - bílý na dekorování',             purchase:30,   sell:30},
+  {code:'2370', name:'koule 6cm se stojánkem',                   purchase:0,    sell:103},
+  {code:'2470', name:'koule 8cm se stojánkem',                   purchase:100,  sell:111},
+  {code:'2570', name:'svícen 6cm se stojánkem',                  purchase:0,    sell:116},
+  {code:'2670', name:'svícen 8cm se stojánkem',                  purchase:100,  sell:124},
+  {code:'2770', name:'stojánek 6cm',                             purchase:22,   sell:29},
+  {code:'2870', name:'stojánek 8cm',                             purchase:24,   sell:31},
+  {code:'2970', name:'stojánek 10cm',                            purchase:24,   sell:34},
+  {code:'3070', name:'stojánek 12cm',                            purchase:35,   sell:53},
+  {code:'3170', name:'stojánek 15cm',                            purchase:33,   sell:42},
+  {code:'3970', name:'zvonek',                                   purchase:75,   sell:110},
+  {code:'4070', name:'kalíšek',                                  purchase:80,   sell:130},
+  {code:'4170', name:'měsíc',                                    purchase:110,  sell:165},
+  {code:'4270', name:'hvězda',                                   purchase:60,   sell:90},
+  {code:'4370', name:'placička',                                  purchase:50,   sell:75},
+  {code:'4570', name:'svícen na nožce',                          purchase:135,  sell:182},
+  {code:'4670', name:'srdce',                                    purchase:60,   sell:90},
+  {code:'4770', name:'hvězda malá',                              purchase:50,   sell:75},
+  {code:'6170', name:'svícen vánoční 4 svíčky',                  purchase:160,  sell:240},
+  {code:'6270', name:'svícen vánoční 3 svíčky',                  purchase:135,  sell:205},
+  {code:'6370', name:'svícen vánoční 2 svíčky',                  purchase:120,  sell:180},
+  {code:'6470', name:'svícen vánoční 1 svíčka',                  purchase:90,   sell:135},
+  {code:'6670', name:'špice velká',                              purchase:90,   sell:135},
+  {code:'7170', name:'svícen kostka',                            purchase:80,   sell:104},
+  {code:'7270', name:'svícen koule 10cm',                        purchase:78,   sell:102},
+  {code:'7470', name:'placka 10cm',                              purchase:70,   sell:105},
+  {code:'7970', name:'koule 10cm - čirá',                        purchase:35,   sell:50},
+  {code:'8270', name:'koule 6cm S nápis - Praha, plast krabička',purchase:43,   sell:65},
+  {code:'8370', name:'koule 8cm S - nápis Praha, plat krabička', purchase:49,   sell:75},
+  {code:'8470', name:'srdce malé',                               purchase:50,   sell:75},
+  {code:'8870', name:'stromek',                                  purchase:50,   sell:75},
+];
+
+// Catalog formatted for AI prompt
+function catalogForPrompt() {
+  return CATALOG.map(c => `${c.code} | ${c.name} | nákup: ${c.purchase} Kč`).join('\n');
+}
+
+function normalizeItemName(s) {
+  return s.toLowerCase()
+    .normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .replace(/\s+/g, ' ').trim();
+}
+
+// Hardcoded mappings from real handwritten names → catalog code
+const HARDCODED_MAPPINGS = {
+  '6cm':'0670','6 cm':'0670','koule 6cm':'0670',
+  '8cm':'0770','8 cm':'0770','koule 8cm':'0770',
+  '10cm':'0870','10 cm':'0870','koule 10cm':'0870',
+  '12cm':'0170','12 cm':'0170','koule 12cm':'0170',
+  'placka':'4370','placicka':'4370','placicka mala':'4370','placka mala':'4370',
+  'placka velka':'7470','placka 10cm':'7470',
+  'zvon':'3970','zvonek':'3970',
+  'hvezda mala':'4770','hvezda male':'4770',
+  'hvezda velka':'4270','hvezda velke':'4270','hvezda':'4270',
+  'srdce male':'8470','srdbe male':'8470','sroce male':'8470','srdce mala':'8470',
+  'srdce velke':'4670','srdbe velke':'4670','sroce velke':'4670','srdce':'4670',
+  'kalisek':'4070','kalicek':'4070','kalicek bily':'2070','lolisel':'4070','lolisek':'4070','lolíšel':'4070','kolisek':'4070','kolíšek':'4070','kolicek':'4070',
+  'stroh':'8870','strom':'8870','stromek':'8870','strohel':'8870','stromel':'8870','stromeček':'8870','stromecek':'8870',
+  '1valec':'6470','1 valec':'6470','1valee':'6470','1vale':'6470',
+  '2valec':'6370','2 valec':'6370','2valee':'6370','2vale':'6370',
+  '3valec':'6270','3 valec':'6270','3valee':'6270','3vale':'6270',
+  'svicen o12':'0570','svicen o 12':'0570','svicen 12':'0570','svicen f12':'0570',
+  'svicen prumer 12':'0570','svicen prumer12':'0570','svicen průměr 12':'0570','svicen p12':'0570','svicen d12':'0570',
+  'svicen kostka':'0570','svicen koule':'0570','svicen koule 10cm':'0570',
+};
+
+function matchHardcoded(sourceName) {
+  const n = normalizeItemName(sourceName);
+  const code = HARDCODED_MAPPINGS[n];
+  if(!code) return null;
+  const cat = CATALOG.find(c => c.code === code);
+  return cat ? {code: cat.code, name: cat.name, purchasePrice: cat.purchase} : null;
+}
+
+let _files = [];
+let _scans = [];
+let _fakturyBlob = null;
+let _fakturyFilename = '';
+let _customers = [];
+// Confirmed mappings: { "srdce velké": {code, name, purchasePrice}, ... }
+let _mappings = JSON.parse(localStorage.getItem('prijemky_mappings')||'{}');
+let _pendingExtracted = null; // holds AI result while user confirms mappings
+
+function saveMappings() {
+  localStorage.setItem('prijemky_mappings', JSON.stringify(_mappings));
+}
+
+function mappingsForPrompt() {
+  const entries = Object.entries(_mappings);
+  if(!entries.length) return '';
+  return '\nPOTVRZENÁ PÁROVÁNÍ (použij je přímo, neptej se):\n' +
+    entries.map(([src, cat]) => `"${src}" → kód ${cat.code} "${cat.name}"`).join('\n') + '\n';
+}
+
+function catalogSelectHTML(selectedCode) {
+  return `<select style="border:1.5px solid #d0d7e0;border-radius:5px;padding:4px 8px;font-size:0.85rem;font-family:inherit">` +
+    CATALOG.map(c => `<option value="${c.code}" ${c.code===selectedCode?'selected':''}>${c.code} — ${c.name}</option>`).join('') +
+    `</select>`;
+}
+
+function restoreLastCustomers() {
+  try {
+    const saved = localStorage.getItem('prijemky_last_customers');
+    if(!saved) return;
+    _customers = JSON.parse(saved);
+    // Re-apply hardcoded mappings by sourceName first (catches renamed/recoded items)
+    // then fall back to catalog lookup by code (keeps name/price in sync)
+    _customers.forEach(cust => {
+      cust.items = (cust.items||[]).map(it => {
+        const hard = matchHardcoded(it.sourceName || it.name || '');
+        if(hard) return {...it, code: hard.code, name: hard.name, purchasePrice: hard.purchasePrice};
+        if(!it.code) return it;
+        const cat = CATALOG.find(e => e.code === it.code);
+        if(cat) return {...it, name: cat.name, purchasePrice: cat.purchase};
+        return it;
+      });
+    });
+    saveCustomers();
+    renderCustomers();
+    runValidation();
+    document.getElementById('review-section').style.display = 'block';
+    document.getElementById('review-section').scrollIntoView({behavior:'smooth', block:'start'});
+  } catch(e) {}
+}
+
+async function restoreAndDownload() {
+  restoreLastCustomers();
+  if(!_customers.length) return;
+  await prepareFaktury();
+}
+
+function loadLastReceiptNumber() {
+  const last = localStorage.getItem('prijemky_last_number');
+  const inp = document.getElementById('first-receipt-number');
+  if(last) {
+    inp.placeholder = incrementReceiptNumber(last);
+    document.getElementById('last-num-display').textContent = last;
+    document.getElementById('last-num-hint').style.display = '';
+    document.getElementById('no-last-hint').style.display = 'none';
+  }
+}
+
+function saveLastReceiptNumber(num) {
+  localStorage.setItem('prijemky_last_number', num);
+}
+
+function loadLastInvoiceNumber() {
+  const last = localStorage.getItem('prijemky_last_invoice');
+  const inp = document.getElementById('first-invoice-number');
+  if(last) {
+    inp.placeholder = String(parseInt(last)+1);
+    document.getElementById('last-invoice-display').textContent = last;
+    document.getElementById('last-invoice-hint').style.display = '';
+  }
+}
+
+function saveLastInvoiceNumber(num) {
+  localStorage.setItem('prijemky_last_invoice', String(num));
+}
+
+// Init
+document.addEventListener('DOMContentLoaded', () => {
+  // Load saved settings into modal fields
+  document.getElementById('s-api-key').value = localStorage.getItem('vydejka_api_key')||'';
+  document.getElementById('s-model').value = localStorage.getItem('app_model')||'claude-opus-4-5';
+  loadLastReceiptNumber();
+  loadLastInvoiceNumber();
+  if(localStorage.getItem('prijemky_last_customers')) {
+    document.getElementById('restore-btn').style.display = '';
+  }
+
+  // +1 button: fill field with last used + 1
+  document.getElementById('num-plus1-btn').addEventListener('click', () => {
+    const last = localStorage.getItem('prijemky_last_number');
+    if(!last) { alert('Zatím žádné předchozí číslo neznám. Zadejte číslo ručně.'); return; }
+    document.getElementById('first-receipt-number').value = incrementReceiptNumber(last);
+  });
+
+  // Ctrl+V paste anywhere on page → scan receipt number
+  document.addEventListener('paste', e => {
+    const items = Array.from(e.clipboardData?.items||[]);
+    const imgItem = items.find(it => it.type.startsWith('image/'));
+    if(!imgItem) return;
+    e.preventDefault();
+    const file = imgItem.getAsFile();
+    if(file) scanReceiptNumberFromFile(file);
+  });
+  // Button click → read clipboard directly (no Ctrl+V needed after click)
+  document.getElementById('num-paste-btn').addEventListener('click', async () => {
+    const btn = document.getElementById('num-paste-btn');
+    try {
+      const items = await navigator.clipboard.read();
+      for (const item of items) {
+        const imgType = item.types.find(t => t.startsWith('image/'));
+        if (imgType) {
+          const blob = await item.getType(imgType);
+          const file = new File([blob], 'paste.png', {type: imgType});
+          scanReceiptNumberFromFile(file);
+          return;
+        }
+      }
+      btn.textContent = '⚠ Zkopíruj obrázek první';
+      setTimeout(()=>{ btn.textContent='📋 Vložit obrázek'; }, 3000);
+    } catch(e) {
+      // Clipboard API blocked → guide user to Ctrl+V while focused here
+      btn.textContent = '⌛ Teď stiskni Ctrl+V…';
+      btn.focus();
+      setTimeout(()=>{ btn.textContent='📋 Vložit obrázek'; }, 5000);
+    }
+  });
+  document.getElementById('receipt-date').value = new Date().toISOString().split('T')[0];
+});
+
+// File handling
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('drop-zone').classList.remove('over');
+  handleFiles(e.dataTransfer.files);
+}
+function handleFiles(fileList) {
+  Array.from(fileList).forEach(f => {
+    if(_files.length >= 2) return;
+    if(_files.some(x => x.name === f.name)) return;
+    if(f.type.startsWith('image/') || f.type === 'application/pdf' ||
+       f.name.match(/\.xlsx?$/i)) _files.push(f);
+  });
+  renderFiles();
+}
+function removeFile(name) { _files = _files.filter(f => f.name !== name); renderFiles(); }
+
+async function combineScansToOnePDF(scans) {
+  // 1 soubor: vrátíme přímo (žádné kombinování)
+  if(scans.length === 1) {
+    return { buffer: await scans[0].arrayBuffer(), ext: scans[0].name.split('.').pop().toLowerCase() };
+  }
+
+  // Více souborů: zkombinujeme do jednoho PDF
+  const { jsPDF } = window.jspdf;
+  let pdf = null;
+
+  for(const scan of scans) {
+    let pages = []; // { dataUrl, w, h }
+
+    if(scan.type.startsWith('image/')) {
+      const url = URL.createObjectURL(scan);
+      const img = await new Promise(resolve => {
+        const i = new Image(); i.onload = () => resolve(i); i.src = url;
+      });
+      URL.revokeObjectURL(url);
+      const canvas = document.createElement('canvas');
+      canvas.width = img.naturalWidth; canvas.height = img.naturalHeight;
+      canvas.getContext('2d').drawImage(img, 0, 0);
+      pages.push({ dataUrl: canvas.toDataURL('image/jpeg', 0.88), w: img.naturalWidth, h: img.naturalHeight });
+
+    } else if(scan.type === 'application/pdf') {
+      // Renderovat stránky PDF přes PDF.js
+      const ab = await scan.arrayBuffer();
+      const pdfDoc = await pdfjsLib.getDocument({data: ab}).promise;
+      for(let p = 1; p <= pdfDoc.numPages; p++) {
+        const page = await pdfDoc.getPage(p);
+        const vp = page.getViewport({scale: 2});
+        const canvas = document.createElement('canvas');
+        canvas.width = vp.width; canvas.height = vp.height;
+        await page.render({canvasContext: canvas.getContext('2d'), viewport: vp}).promise;
+        pages.push({ dataUrl: canvas.toDataURL('image/jpeg', 0.88), w: vp.width, h: vp.height });
+      }
+    }
+
+    for(const pg of pages) {
+      const orient = pg.w > pg.h ? 'l' : 'p';
+      if(!pdf) {
+        pdf = new jsPDF({ orientation: orient, unit: 'px', format: [pg.w, pg.h], compress: true });
+      } else {
+        pdf.addPage([pg.w, pg.h], orient);
+      }
+      pdf.addImage(pg.dataUrl, 'JPEG', 0, 0, pg.w, pg.h);
+    }
+  }
+
+  return { buffer: pdf.output('arraybuffer'), ext: 'pdf' };
+}
+
+function handleScanFiles(fileList) {
+  Array.from(fileList).forEach(f => {
+    if(_scans.length >= 2) return;
+    if(_scans.some(x => x.name === f.name)) return;
+    if(f.type.startsWith('image/') || f.type === 'application/pdf') _scans.push(f);
+  });
+  renderScanChips();
+}
+function removeScan(name) { _scans = _scans.filter(f => f.name !== name); renderScanChips(); }
+function renderScanChips() {
+  const el = document.getElementById('scan-chips');
+  if(!el) return;
+  el.innerHTML = _scans.map(f => {
+    const icon = f.type==='application/pdf' ? '📄' : '🖼';
+    return `<span style="display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,0.15);border-radius:5px;padding:4px 10px;font-size:0.79rem;color:white">${icon} ${esc(f.name)}<button onclick="removeScan('${esc(f.name).replace(/'/g,"\\'")}');" style="background:none;border:none;cursor:pointer;color:rgba(255,255,255,0.6);font-size:13px;padding:0;line-height:1">×</button></span>`;
+  }).join('') || '<span style="color:rgba(255,255,255,0.4);font-size:0.79rem">žádné skeny — faktury se stáhnou bez příloh</span>';
+}
+function renderFiles() {
+  document.getElementById('uploaded-files').innerHTML = _files.map(f => {
+    const icon = f.type==='application/pdf' ? '📄' : f.name.match(/\.xlsx?$/i) ? '📊' : '🖼';
+    return `<span class="file-chip">${icon} ${esc(f.name)}<button onclick="removeFile('${esc(f.name).replace(/'/g,"\\'")}')">×</button></span>`;
+  }).join('');
+}
+
+// Excel text extraction
+async function extractExcelText(file) {
+  const buf = await file.arrayBuffer();
+  const wb = XLSX.read(buf, {type:'array'});
+  let out = '';
+  wb.SheetNames.forEach(sheetName => {
+    const ws = wb.Sheets[sheetName];
+    // Convert to 2D array, keep empty cells as empty string
+    const rows = XLSX.utils.sheet_to_json(ws, {header:1, defval:''});
+    out += `=== List: ${sheetName} ===\n`;
+    rows.forEach(row => {
+      const line = row.map(c => String(c ?? '').trim()).filter(c => c).join('\t');
+      if(line) out += line + '\n';
+    });
+    out += '\n';
+  });
+  return out;
+}
+
+// PDF text extraction — returns {text, isScanned}
+async function extractPDFText(file) {
+  const buf = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({data: buf}).promise;
+  let out = '';
+  for(let i = 1; i <= pdf.numPages; i++) {
+    const page = await pdf.getPage(i);
+    const tc = await page.getTextContent();
+    const byY = {};
+    tc.items.forEach(it => {
+      const y = Math.round(it.transform[5]);
+      if(!byY[y]) byY[y] = [];
+      byY[y].push({x: it.transform[4], str: it.str});
+    });
+    Object.keys(byY).sort((a,b)=>b-a).forEach(y => {
+      const line = byY[y].sort((a,b)=>a.x-b.x).map(t=>t.str).join(' ').trim();
+      if(line) out += line + '\n';
+    });
+    out += '\n--- stránka ' + i + ' konec ---\n\n';
+  }
+  const realContent = out.replace(/---[^\n]+---/g,'').trim();
+  return {text: out, isScanned: realContent.length < 50};
+}
+
+// Render PDF pages as base64 images (for scanned PDFs)
+async function pdfToImages(file) {
+  const buf = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({data: buf}).promise;
+  const images = [];
+  for(let i = 1; i <= pdf.numPages; i++) {
+    const page = await pdf.getPage(i);
+    const scale = 3.0;
+    const vp = page.getViewport({scale});
+    const canvas = document.createElement('canvas');
+    canvas.width = vp.width;
+    canvas.height = vp.height;
+    await page.render({canvasContext: canvas.getContext('2d'), viewport: vp}).promise;
+    const b64 = canvas.toDataURL('image/png').split(',')[1];
+    images.push(b64);
+  }
+  return images;
+}
+
+function fileToBase64(file) {
+  return new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload = () => res(r.result.split(',')[1]);
+    r.onerror = rej;
+    r.readAsDataURL(file);
+  });
+}
+
+// Main extraction
+async function extractFromPages() {
+  if(!_files.length) { alert('Nejprve nahrajte alespoň jednu stránku.'); return; }
+  const apiKey = getApiKey();
+  if(!apiKey) { alert('Zadejte API klíč v Nastavení (⚙ vpravo nahoře).'); return; }
+  const model = getModel();
+  const btn = document.getElementById('extract-btn');
+  btn.disabled = true; btn.textContent = '⏳ Zpracovávám…';
+  setStatus('info', '<span class="spinner"></span>Extrahuji zákazníky a položky…');
+  try {
+    const content = [];
+    const previews = [];
+    for(const file of _files) {
+      if(file.type === 'application/pdf') {
+        setStatus('info', `<span class="spinner"></span>Renderuji stránky z ${esc(file.name)}…`);
+        const {text, isScanned} = await extractPDFText(file);
+        if(isScanned) {
+          const images = await pdfToImages(file);
+          images.forEach(b64 => { content.push({type:'image', source:{type:'base64', media_type:'image/png', data:b64}}); previews.push(b64); });
+        } else {
+          content.push({type:'text', text:`=== ${file.name} ===\n${text}`});
+        }
+      } else if(file.name.match(/\.xlsx?$/i)) {
+        setStatus('info', `<span class="spinner"></span>Čtu Excel ${esc(file.name)}…`);
+        content.push({type:'text', text:`=== ${file.name} ===\n${await extractExcelText(file)}`});
+      } else {
+        const b64 = await fileToBase64(file);
+        content.push({type:'image', source:{type:'base64', media_type:file.type, data:b64}});
+        previews.push(b64);
+      }
+    }
+
+    setStatus('info', '<span class="spinner"></span>AI čte dokument…');
+
+    const prompt = `Podívej se pozorně na tento skenovaný/ručně psaný seznam dodání vánočních ozdob.
+
+Nejprve si pro sebe popiš co vidíš: kolik sekcí zákazníků je na stránce, jak se zákazníci jmenují (podtržená jména nebo samostatné nadpisy), jaké položky a množství jsou u každého. Toto je tvůj interní rozbor — piš volně.
+
+Pak na úplný konec své odpovědi vlož JSON v tomto formátu (nic za ním):
+<JSON>
+[{"customerName":"jméno zákazníka","items":[{"sourceName":"název přesně ze stránky","qty":ČÍSLO}]}]
+</JSON>
+
+Pravidla pro JSON:
+- customerName: přesně jak je napsáno na stránce
+- NIKDY jako zákazníka nepoužij: "P. Bosak", "P. Bošák", "Fa", "P. Bosak (Fa)" ani žádnou jejich variantu — to je název firmy, ne zákazník
+- sourceName: přepiš co vidíš, ale snaž se co nejblíže jednomu z těchto ZNÁMÝCH názvů produktů: 6cm, 8cm, 10cm, 12cm, placka, placka velká, zvon, hvezda malá, hvezda velká, srdce malé, srdce velké, kalíšek, strom, 1valec, 2valec, 3valec, svícen ø12, svícen průměr 12 — pokud vidíš něco co zní podobně, použij správný název ze seznamu
+- qty: přesné číslo ze stránky, NIKDY neodhaduj
+- Každý zákazník = samostatný objekt
+- Zákazník je vždy podtržené jméno nebo nadpis sekce — může to být: Celetná, Obchod Šeška, Obchod Ostrava, Pop., Kar., Hate, Sladká Fantasie, nebo jiný název obchodu/ulice`;
+
+    content.push({type:'text', text: prompt});
+
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST',
+      headers:{'x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true','content-type':'application/json'},
+      body: JSON.stringify({model, max_tokens:8192, messages:[{role:'user', content}]})
+    });
+    const data = await resp.json();
+    if(data.error) throw new Error(data.error.message);
+    const aiText = (data.content?.[0]?.text||'').trim();
+
+    // Extract JSON between <JSON> tags
+    const tagMatch = aiText.match(/<JSON>\s*([\s\S]*?)\s*<\/JSON>/i);
+    const jsonStr = tagMatch ? tagMatch[1] : aiText.replace(/^```(?:json)?\s*/i,'').replace(/\s*```$/,'');
+    const arrMatch = jsonStr.match(/\[[\s\S]*\]/);
+    if(!arrMatch) {
+      // Show AI reasoning + error
+      setStatus('error', `AI nedokázala extrahovat data.<br><pre style="font-size:0.75rem;white-space:pre-wrap;max-height:300px;overflow:auto;margin-top:6px">${esc(aiText.slice(0,1200))}</pre>`);
+      btn.disabled = false; btn.textContent = '🔍 Extrahovat zákazníky a položky';
+      return;
+    }
+
+    let extracted;
+    try { extracted = JSON.parse(arrMatch[0]); }
+    catch(e) {
+      // repair truncated JSON
+      let fixed = arrMatch[0];
+      if((fixed.match(/"/g)||[]).length%2!==0) fixed+='"';
+      const stack=[];
+      for(const ch of fixed){if(ch==='{')stack.push('}');else if(ch==='[')stack.push(']');else if(ch==='}'||ch===']')stack.pop();}
+      fixed=fixed.replace(/,\s*$/,'')+stack.reverse().join('');
+      try { extracted=JSON.parse(fixed); } catch(e2) { throw new Error('Chyba parsování JSON: '+e.message); }
+    }
+    if(!extracted.length) throw new Error('Nebyl nalezen žádný zákazník.');
+
+    // Apply hardcoded + saved mappings to extracted items
+    _pendingContent = content;
+    _pendingExtracted = extracted.map(c=>({...c, items:(c.items||[]).map(it=>{
+      const src = (it.sourceName||it.name||'').trim();
+      const hard = matchHardcoded(src);
+      const saved = _mappings[src.toLowerCase()] || _mappings[normalizeItemName(src)];
+      const cat = hard || saved;
+      return {...it, code: cat?cat.code:'', name: cat?cat.name:(it.name||src), purchasePrice: cat?cat.purchasePrice:null};
+    })}));
+    showCustomerConfirm(extracted.map(c=>c.customerName), previews);
+    setStatus('ok', `✅ Nalezeno ${extracted.length} zákazníků — zkontrolujte jména a klikněte Extrahovat položky.`);
+
+  } catch(e) {
+    setStatus('error', '⚠ Chyba: ' + esc(e.message));
+  }
+  btn.disabled = false; btn.textContent = '🔍 Extrahovat zákazníky a položky';
+}
+
+let _pendingContent = null;
+
+function showCustomerConfirm(names, previews) {
+  const list = document.getElementById('customers-confirm-list');
+  list.innerHTML = '';
+  names.forEach(n => addCustomerConfirmRow(n));
+  if(!names.length) addCustomerConfirmRow(''); // start with one empty row
+
+  // Show page previews
+  const prev = document.getElementById('page-previews');
+  prev.innerHTML = (previews||[]).map((b64,i) =>
+    `<img src="data:image/jpeg;base64,${b64}" style="max-width:100%;max-height:600px;border:1px solid #dde;border-radius:6px;cursor:zoom-in" title="Stránka ${i+1}" onclick="this.style.maxHeight=this.style.maxHeight==='none'?'600px':'none'">`
+  ).join('');
+
+  document.getElementById('customers-confirm-section').style.display = 'block';
+  document.getElementById('customers-confirm-section').scrollIntoView({behavior:'smooth', block:'start'});
+}
+
+function addCustomerConfirmRow(name) {
+  const list = document.getElementById('customers-confirm-list');
+  const row = document.createElement('div');
+  row.style.cssText = 'display:flex;gap:6px;align-items:center';
+  row.innerHTML = `<input type="text" value="${esc(name)}" placeholder="Název zákazníka" style="flex:1;padding:7px 10px;border:1.5px solid #d0d7e0;border-radius:6px;font-size:0.9rem;font-family:inherit">
+    <button class="btn-sm danger" onclick="this.parentElement.remove()">×</button>`;
+  list.appendChild(row);
+}
+
+async function proceedToStep2() {
+  const names = Array.from(document.querySelectorAll('#customers-confirm-list input')).map(i=>i.value.trim()).filter(Boolean);
+  if(!names.length) { alert('Přidejte alespoň jednoho zákazníka.'); return; }
+
+  const btn = document.querySelector('#customers-confirm-section .btn-primary');
+  btn.disabled = true; btn.textContent = '⏳ Zpracovávám…';
+  document.getElementById('customers-confirm-section').style.display = 'none';
+
+  // Update customer names from user edits
+  if(_pendingExtracted && _pendingExtracted.length) {
+    names.forEach((name, i) => { if(_pendingExtracted[i]) _pendingExtracted[i].customerName = name; });
+    // Add blank customers if user added more names than AI found
+    for(let i = _pendingExtracted.length; i < names.length; i++) {
+      _pendingExtracted.push({customerName: names[i], items:[]});
+    }
+    _pendingExtracted = _pendingExtracted.slice(0, names.length);
+
+    // Apply mappings to items
+    _pendingExtracted.forEach(c => {
+      c.items = (c.items||[]).map(it => {
+        const src = (it.sourceName||it.name||'').trim();
+        const hard = matchHardcoded(src);
+        if(hard) return {...it, code:hard.code, name:hard.name, purchasePrice:hard.purchasePrice};
+        const srcLow = src.toLowerCase(), normSrc = normalizeItemName(src);
+        const mKey = srcLow in _mappings ? srcLow : (normSrc in _mappings ? normSrc : null);
+        const m = mKey !== null ? _mappings[mKey] : undefined;
+        if(m) return {...it, code:m.code, name:m.name, purchasePrice:m.purchasePrice};
+        return it;
+      });
+    });
+
+    const newSources = {};
+    _pendingExtracted.forEach(c=>c.items.forEach(it=>{
+      const k=(it.sourceName||it.name||'').trim().toLowerCase();
+      // přeskočit pokud kód je znám NEBO pokud bylo explicitně přeskočeno (null v _mappings)
+      if(!it.code && k && !(k in _mappings) && !(normalizeItemName(k) in _mappings)) newSources[k]=it;
+    }));
+    if(Object.keys(newSources).length>0) {
+      showMappingConfirmation(newSources);
+      setStatus('ok',`✅ Hotovo. Potvrďte ${Object.keys(newSources).length} nespárovaných položek níže.`);
+    } else {
+      buildCustomers();
+      setStatus('ok',`✅ Hotovo — ${_customers.length} zákazníků.`);
+    }
+    btn.disabled=false; btn.textContent='➜ Potvrdit zákazníky';
+    return;
+  }
+
+  // Fallback: no prior extraction — run step A+B
+  const apiKey = getApiKey();
+  const model = getModel();
+  setStatus('info', '<span class="spinner"></span>AI přepisuje položky ze stránky…');
+
+  try {
+    // --- KROK A: přepis z obrázku — jen jméno zákazníka + název + množství, bez katalogu ---
+    const contentA = [..._pendingContent, {type:'text', text:
+`Na stránce je seznam dodání vánočních ozdob. Zákazníci jsou: ${names.map((n,i)=>`${i+1}. ${n}`).join(', ')}.
+
+Pro každého zákazníka vypiš jeho položky přesně jak jsou napsány na stránce.
+Vrať POUZE JSON (žádný jiný text):
+[{"customerName":"přesně jeden z názvů výše","items":[{"name":"název ze stránky","qty":ČÍSLO}]}]
+
+Pravidla:
+- customerName: přesně jeden z názvů ze seznamu výše, nic nevymýšlej
+- name: přepiš přesně co vidíš na stránce, nepřekládej, neopravuj
+- qty: přesné číslo ze stránky
+- Pro každého zákazníka ze seznamu vlož objekt (i kdyby byl prázdný)`
+    }];
+
+    const respA = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST',
+      headers:{'x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true','content-type':'application/json'},
+      body: JSON.stringify({model, max_tokens:8192, messages:[{role:'user', content:contentA}]})
+    });
+    const dataA = await respA.json();
+    if(dataA.error) throw new Error(dataA.error.message);
+    const rawA = (dataA.content?.[0]?.text||'').trim().replace(/^```(?:json)?\s*/i,'').replace(/\s*```$/,'');
+    const mA = rawA.match(/\[[\s\S]*\]/);
+    if(!mA) throw new Error(`AI nepřepsala stránku správně. Odpověď:\n${rawA.slice(0,400)}`);
+    const transcribed = JSON.parse(mA[0]);
+    if(!transcribed.length) throw new Error('Žádné položky nenalezeny.');
+
+    // --- KROK B: párování přepsaných názvů s katalogem (lokálně, bez AI) ---
+    _pendingExtracted = transcribed.map(c => ({
+      customerName: c.customerName,
+      items: (c.items||[]).map(it => {
+        const src = (it.name||'').trim();
+        const hard = matchHardcoded(src);
+        const srcLow = src.toLowerCase(), normSrc = normalizeItemName(src);
+        const mKey = srcLow in _mappings ? srcLow : (normSrc in _mappings ? normSrc : null);
+        const saved = mKey !== null ? _mappings[mKey] : undefined;
+        const cat = hard || saved;
+        return {
+          sourceName: it.name,
+          code: cat ? cat.code : '',
+          name: cat ? cat.name : it.name,
+          qty: parseFloat(it.qty)||1,
+          unitPrice: null,
+          purchasePrice: cat ? cat.purchasePrice : null
+        };
+      })
+    }));
+
+    // Show mapping confirmation only for items without a catalog match and not explicitly skipped
+    const newSources = {};
+    _pendingExtracted.forEach(c => c.items.forEach(it => {
+      const k = (it.sourceName||it.name||'').trim().toLowerCase();
+      if(!it.code && k && !(k in _mappings) && !(normalizeItemName(k) in _mappings)) newSources[it.sourceName||it.name] = it;
+    }));
+
+    if(Object.keys(newSources).length > 0) {
+      showMappingConfirmation(newSources);
+      setStatus('ok', `✅ Přepsáno. Potvrďte ${Object.keys(newSources).length} nespárovaných položek níže.`);
+    } else {
+      buildCustomers();
+      setStatus('ok', `✅ Hotovo — ${_customers.length} zákazníků.`);
+    }
+  } catch(e) {
+    setStatus('error', '⚠ Chyba: ' + esc(e.message));
+    document.getElementById('customers-confirm-section').style.display = 'block';
+  }
+  btn.disabled = false; btn.textContent = '➜ Extrahovat položky';
+}
+
+function setStatus(type, html) {
+  const el = document.getElementById('extract-status');
+  el.innerHTML = `<div class="status ${type}">${html}</div>`;
+}
+
+function openSettings() {
+  document.getElementById('settings-modal').style.display = 'flex';
+}
+function closeSettings() {
+  document.getElementById('settings-modal').style.display = 'none';
+}
+function saveSettings() {
+  const k = document.getElementById('s-api-key').value.trim();
+  const m = document.getElementById('s-model').value;
+  if(k) localStorage.setItem('vydejka_api_key', k);
+  localStorage.setItem('app_model', m);
+  closeSettings();
+}
+function getApiKey() { return localStorage.getItem('vydejka_api_key')||''; }
+function getModel() { return localStorage.getItem('app_model')||'claude-sonnet-4-5'; }
+
+async function scanReceiptNumberFromFile(file) {
+  const apiKey = getApiKey();
+  if(!apiKey) { alert('Nejdřív nastav API klíč v ⚙ Nastavení.'); return; }
+  const btn = document.getElementById('num-paste-btn');
+  btn.textContent = '⏳ Čtu…'; btn.disabled = true;
+  try {
+    const b64 = await fileToBase64(file);
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST',
+      headers:{'x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true','content-type':'application/json'},
+      body: JSON.stringify({model:getModel(), max_tokens:64, messages:[{role:'user', content:[
+        {type:'image', source:{type:'base64', media_type:file.type, data:b64}},
+        {type:'text', text:'Na obrázku je číslo dokladu (příjemky nebo faktury). Vrať POUZE to číslo přesně jak je napsáno, například "26OL600042". Žádný jiný text.'}
+      ]}]})
+    });
+    const data = await resp.json();
+    if(data.error) throw new Error(data.error.message);
+    const num = (data.content?.[0]?.text||'').trim();
+    if(!num) throw new Error('Číslo nenalezeno');
+    // Increment last digits
+    const next = incrementReceiptNumber(num);
+    document.getElementById('first-receipt-number').value = next;
+    btn.textContent = '✅ ' + next;
+    setTimeout(()=>{ btn.textContent='📋 Ctrl+V'; btn.disabled=false; }, 2000);
+    return;
+  } catch(e) { alert('Chyba při skenování: '+e.message); }
+  btn.textContent = '📋 Ctrl+V'; btn.disabled = false;
+}
+
+function incrementReceiptNumber(num) {
+  // Find trailing digits and increment: "26OL600042" → "26OL600043"
+  return num.replace(/(\d+)$/, (_, n) => String(parseInt(n)+1).padStart(n.length, '0'));
+}
+
+function showMappingConfirmation(newSources) {
+  const entries = Object.entries(newSources);
+  const cards = entries.map(([src, it]) => {
+    const selId = 'map_' + src.replace(/[^a-z0-9]/g,'_');
+    const opts = `<option value="">— vyberte —</option>` +
+      `<option value="__skip__">⊘ Přeskočit — toto nic neznamená</option>` +
+      CATALOG.map(c => `<option value="${c.code}">${c.code} — ${c.name}</option>`).join('');
+    return `<div style="background:#fff;border:2px solid #f0a500;border-radius:8px;padding:14px 16px;display:flex;flex-direction:column;gap:8px">
+      <div style="font-size:0.78rem;color:#888;font-weight:500;text-transform:uppercase;letter-spacing:.04em">Co je toto?</div>
+      <div style="font-size:1rem;font-weight:600;color:#1a2a3a;font-family:monospace">"${esc(it.sourceName||src)}"</div>
+      <select id="${selId}" data-src="${esc(src)}" style="border:1.5px solid #d0d7e0;border-radius:5px;padding:6px 8px;font-size:0.88rem;font-family:inherit;width:100%">
+        ${opts}
+      </select>
+    </div>`;
+  }).join('');
+
+  document.getElementById('mapping-list').innerHTML = `
+    <div style="margin-bottom:12px;font-size:0.95rem;color:#555">
+      Našla jsem <strong>${entries.length}</strong> ${entries.length===1?'položku':'položky'} které neznám. Vyberte prosím ke každé správnou z katalogu — zapamatuji si to natrvalo.
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px">
+      ${cards}
+    </div>`;
+
+  document.getElementById('mapping-section').style.display = 'block';
+  document.getElementById('mapping-section').scrollIntoView({behavior:'smooth', block:'start'});
+}
+
+function confirmMappings() {
+  const sels = Array.from(document.querySelectorAll('#mapping-list select[data-src]'));
+  // Blokovat jen ty, kde není vybráno vůbec nic (ani přeskočit)
+  const missing = sels.filter(s => !s.value);
+  if(missing.length) {
+    missing.forEach(s => s.style.border = '2px solid #e53e3e');
+    alert(`Prosím u každé položky buď vyberte z katalogu, nebo zvolte „Přeskočit".`);
+    return;
+  }
+  sels.forEach(sel => {
+    const src = sel.dataset.src;
+    if(sel.value === '__skip__') {
+      // Zapamatuj, že toto slovo nic neznamená — příště se nebude ptát
+      _mappings[src] = null;
+    } else {
+      const cat = CATALOG.find(c => c.code === sel.value);
+      if(cat) _mappings[src] = {code: cat.code, name: cat.name, purchasePrice: cat.purchase};
+    }
+  });
+  saveMappings();
+  document.getElementById('mapping-section').style.display = 'none';
+  buildCustomers();
+}
+
+// Automaticky smaž chybné mapování "pim" pokud existuje
+(function() {
+  ['pim','Pim','PIM'].forEach(k => { if(_mappings[k] !== undefined) { delete _mappings[k]; saveMappings(); } });
+})();
+
+function showMappingsManager() {
+  const el = document.getElementById('mappings-manager');
+  const entries = Object.entries(_mappings);
+  if(!entries.length) { el.innerHTML = '<div style="color:#888;font-size:0.88rem">Žádná zapamatovaná párování.</div>'; el.style.display='block'; return; }
+  el.innerHTML = `<div style="font-size:0.82rem;font-weight:700;color:#7a4f00;margin-bottom:8px">Zapamatovaná párování (klik 🗑 = smazat)</div>
+    <div style="display:flex;flex-direction:column;gap:4px">` +
+    entries.map(([src, cat]) => `
+      <div style="display:flex;align-items:center;gap:8px;background:#fffdf0;border:1px solid #f0d090;border-radius:5px;padding:5px 10px;font-size:0.84rem">
+        <span style="font-family:monospace;color:#1a2a3a;flex:1">"${esc(src)}"</span>
+        <span style="color:#888">→</span>
+        <span style="color:#27ae60;flex:2">${cat ? `${cat.code} — ${cat.name}` : '<em style="color:#aaa">přeskočit</em>'}</span>
+        <button onclick="deleteMapping(${JSON.stringify(src)})" style="background:none;border:none;cursor:pointer;font-size:1rem;color:#c0392b;padding:0 4px" title="Smazat toto párování">🗑</button>
+      </div>`).join('') +
+    '</div>';
+  el.style.display = 'block';
+}
+
+function deleteMapping(src) {
+  delete _mappings[src];
+  saveMappings();
+  showMappingsManager();
+}
+
+function buildCustomers() {
+  const firstNum = document.getElementById('first-receipt-number').value.trim() || '26OL600001';
+  _customers = (_pendingExtracted||[]).map((c,i) => ({
+    customerName: c.customerName||'',
+    ico: '',
+    note: '',
+    receiptNumber: fmtNum(firstNum, i),
+    items: (c.items||[]).map(it => {
+      const src = (it.sourceName||it.name||'').trim();
+      const hard = matchHardcoded(src);
+      const confirmed = hard || _mappings[src.toLowerCase()] || _mappings[normalizeItemName(src)];
+      return {
+        code: confirmed ? confirmed.code : (it.code||''),
+        name: confirmed ? confirmed.name : (it.name||''),
+        qty: parseFloat(it.qty)||1,
+        unitPrice: null,
+        purchasePrice: confirmed ? confirmed.purchasePrice : (it.purchasePrice!=null ? parseFloat(it.purchasePrice) : null)
+      };
+    })
+  }));
+  // Remember the last assigned receipt number
+  if(_customers.length) {
+    const lastNum = _customers[_customers.length-1].receiptNumber;
+    saveLastReceiptNumber(lastNum);
+    loadLastReceiptNumber();
+  }
+  try { localStorage.setItem('prijemky_last_customers', JSON.stringify(_customers)); } catch(e) {}
+  // Auto-zkopíruj skeny z _files do _scans (pokud ještě nejsou)
+  if(_scans.length === 0) {
+    _scans = _files.filter(f => f.type.startsWith('image/') || f.type === 'application/pdf');
+  }
+  renderCustomers();
+  renderScanChips();
+  runValidation();
+  document.getElementById('review-section').style.display = 'block';
+  document.getElementById('review-section').scrollIntoView({behavior:'smooth', block:'start'});
+}
+
+function fmtNum(baseNumber, offset) {
+  // "26OL600042" + offset 1 → "26OL600043"
+  return String(baseNumber).replace(/(\d+)$/, (_, n) => String(parseInt(n)+offset).padStart(n.length, '0'));
+}
+
+// Render customers
+function renderCustomers() {
+  document.getElementById('customers-list').innerHTML =
+    `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;align-items:start">` +
+    _customers.map((c,ci) => {
+    const hasErrors = c.items.some(it=>!it.code);
+    return `<div class="customer-card${hasErrors?' has-errors':''}" id="ccard-${ci}" style="padding:14px;margin:0">
+      <div class="cust-title" style="margin-bottom:8px">
+        <span class="cust-num">${ci+1}</span>
+        <input class="cust-name-input" type="text" value="${esc(c.customerName)}" placeholder="Zákazník"
+          oninput="_customers[${ci}].customerName=this.value;saveCustomers()" style="font-size:0.88rem">
+        <button class="btn-sm danger" onclick="removeCustomer(${ci})" style="padding:2px 7px">×</button>
+      </div>
+      <div style="margin-bottom:8px">
+        <input type="text" value="${esc(c.receiptNumber)}" title="Číslo příjemky" placeholder="číslo příjemky"
+          style="width:100%;box-sizing:border-box;padding:3px 5px;border:1.5px solid #d0d7e0;border-radius:5px;font-size:0.72rem;font-family:monospace;letter-spacing:-0.01em"
+          oninput="_customers[${ci}].receiptNumber=this.value;saveCustomers()">
+      </div>
+      <table style="font-size:0.8rem;width:100%;table-layout:fixed">
+        <thead><tr>
+          <th style="width:52px;padding:4px 5px">Kód</th>
+          <th style="padding:4px 5px">Název</th>
+          <th style="width:40px;padding:4px 5px">Ks</th>
+          <th style="width:42px;padding:4px 2px"></th>
+        </tr></thead>
+        <tbody>${c.items.map((it,ii)=>renderItemRow(ci,ii,it,c.items.length)).join('')}</tbody>
+      </table>
+      <div style="margin-top:6px;display:flex;gap:6px;align-items:center">
+        <button class="btn-sm" onclick="addItem(${ci})" style="font-size:0.78rem;padding:3px 8px">+ Přidat</button>
+        <button class="btn-sm" onclick="downloadSingleXML(${ci})" style="font-size:0.78rem;padding:3px 8px;margin-left:auto">⬇ XML</button>
+      </div>
+    </div>`;
+  }).join('') + `</div>`;
+}
+
+function renderItemRow(ci, ii, it, total) {
+  if(it.isNew) {
+    const opts = CATALOG.map(c => `<option value="${c.code}">${c.code} — ${c.name}</option>`).join('');
+    return `<tr>
+      <td colspan="3" style="padding:3px 4px">
+        <select onchange="selectCatalogItem(${ci},${ii},this.value)" style="width:100%;padding:4px 6px;border:1.5px solid #1a3a5c;border-radius:4px;font-size:0.78rem;font-family:inherit;background:#eef4ff">
+          <option value="">— vyberte z katalogu —</option>${opts}
+        </select>
+      </td>
+      <td><button class="btn-sm danger" style="padding:2px 5px" onclick="removeItem(${ci},${ii})">×</button></td>
+    </tr>`;
+  }
+  const noCode = !it.code;
+  const up = ii > 0       ? `<button class="btn-sm" style="padding:1px 4px;font-size:10px" onclick="moveItem(${ci},${ii},-1)">↑</button>` : '';
+  const dn = ii < total-1 ? `<button class="btn-sm" style="padding:1px 4px;font-size:10px" onclick="moveItem(${ci},${ii},1)">↓</button>`  : '';
+  return `<tr>
+    <td style="padding:3px 4px"><input type="text" value="${esc(it.code)}" class="${noCode?'warn':''}" placeholder="kód"
+      style="width:100%;padding:3px 5px;font-size:0.78rem" onchange="updateItem(${ci},${ii},'code',this.value)"></td>
+    <td style="padding:3px 4px"><input type="text" value="${esc(it.name)}" placeholder="název"
+      style="width:100%;padding:3px 5px;font-size:0.78rem" onchange="updateItem(${ci},${ii},'name',this.value)"></td>
+    <td style="padding:3px 4px"><input type="text" inputmode="numeric" value="${it.qty}"
+      style="width:100%;padding:3px 5px;font-size:0.78rem" onchange="updateItem(${ci},${ii},'qty',parseFloat(this.value)||1)"></td>
+    <td style="padding:3px 2px;white-space:nowrap">${up}${dn}<button class="btn-sm danger" style="padding:1px 4px;font-size:10px" onclick="removeItem(${ci},${ii})">×</button></td>
+  </tr>`;
+}
+
+function renderTotals(items) {
+  const total = items.reduce((s,it)=>s+((it.qty||0)*(it.unitPrice||0)),0);
+  const vat = round2(total*0.21);
+  const sum = round2(total+vat);
+  return `Bez DPH: <strong>${round2(total).toLocaleString('cs')} Kč</strong> &nbsp;|&nbsp; DPH 21%: <strong>${vat.toLocaleString('cs')} Kč</strong> &nbsp;|&nbsp; Celkem: <strong>${sum.toLocaleString('cs')} Kč</strong>`;
+}
+
+function saveCustomers() {
+  try { localStorage.setItem('prijemky_last_customers', JSON.stringify(_customers)); } catch(e) {}
+}
+
+function updateItem(ci,ii,field,value) {
+  _customers[ci].items[ii][field] = value;
+  saveCustomers();
+  // Re-render totals
+  const tot = document.getElementById(`totals-${ci}`);
+  if(tot) tot.innerHTML = renderTotals(_customers[ci].items);
+  // Update row warn state
+  const row = document.querySelectorAll(`#ccard-${ci} tbody tr`)[ii];
+  if(row && (field==='code'||field==='unitPrice')) {
+    const inputs = row.querySelectorAll('input');
+    if(field==='code') inputs[0].className = value?'':'warn';
+    if(field==='unitPrice') inputs[3].className = (value==null||value==='')? 'warn':'';
+  }
+}
+
+function addItem(ci) {
+  _customers[ci].items.push({code:'',name:'',qty:1,unitPrice:null,purchasePrice:null,isNew:true});
+  renderCustomers();
+  // Focus the new select
+  const newSel = document.querySelector(`#ccard-${ci} tbody tr:last-child select`);
+  if(newSel) { newSel.scrollIntoView({block:'nearest'}); newSel.focus(); }
+}
+
+function selectCatalogItem(ci, ii, code) {
+  if(!code) return;
+  const cat = CATALOG.find(c => c.code === code);
+  if(!cat) return;
+  _customers[ci].items[ii] = {code: cat.code, name: cat.name, qty: 1, unitPrice: cat.sell, purchasePrice: cat.purchase, isNew: false};
+  renderCustomers();
+  runValidation();
+}
+
+function moveItem(ci, ii, dir) {
+  const items = _customers[ci].items;
+  const newIdx = ii + dir;
+  if(newIdx < 0 || newIdx >= items.length) return;
+  [items[ii], items[newIdx]] = [items[newIdx], items[ii]];
+  renderCustomers();
+}
+
+function removeItem(ci,ii) { _customers[ci].items.splice(ii,1); renderCustomers(); }
+function removeCustomer(ci) { _customers.splice(ci,1); renderCustomers(); }
+
+function round2(n) { return Math.round(n*100)/100; }
+
+// XML generation
+function generateUUID() {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+    const r=Math.random()*16|0, v=c==='x'?r:(r&0x3|0x8); return v.toString(16);
+  });
+}
+function xesc(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function generateXML(customer) {
+  const uuid = generateUUID();
+  const date = document.getElementById('receipt-date').value || new Date().toISOString().split('T')[0];
+  const storeEl = document.getElementById('store-name');
+  const store = storeEl ? storeEl.value.trim() : '';
+  const storeVal = store || 'vánoční ozdoby';
+  const NS = `xmlns:rsp="http://www.stormware.cz/schema/version_2/response.xsd" xmlns:rdc="http://www.stormware.cz/schema/version_2/documentresponse.xsd" xmlns:typ="http://www.stormware.cz/schema/version_2/type.xsd" xmlns:ftr="http://www.stormware.cz/schema/version_2/filter.xsd" xmlns:lst="http://www.stormware.cz/schema/version_2/list.xsd"`;
+
+  let totalPrice=0, totalVAT=0, totalSum=0;
+  const itemsXML = customer.items.map(it => {
+    const qty = parseFloat(it.qty)||0;
+    const up = parseFloat(it.purchasePrice ?? it.unitPrice)||0;
+    const price = round2(qty*up);
+    const priceVAT = round2(price*0.21);
+    const priceSum = round2(price+priceVAT);
+    totalPrice += price; totalVAT += priceVAT; totalSum += priceSum;
+    return `\t\t\t\t<pri:prijemkaItem>
+\t\t\t\t\t<pri:text>${xesc(it.name)}</pri:text>
+\t\t\t\t\t<pri:quantity>${qty}.0</pri:quantity>
+\t\t\t\t\t<pri:unit>ks</pri:unit>
+\t\t\t\t\t<pri:coefficient>1.0</pri:coefficient>
+\t\t\t\t\t<pri:payVAT>false</pri:payVAT>
+\t\t\t\t\t<pri:rateVAT>high</pri:rateVAT>
+\t\t\t\t\t<pri:discountPercentage>0.0</pri:discountPercentage>
+\t\t\t\t\t<pri:homeCurrency>
+\t\t\t\t\t\t<typ:unitPrice>${up}</typ:unitPrice>
+\t\t\t\t\t\t<typ:price>${price}</typ:price>
+\t\t\t\t\t\t<typ:priceVAT>${priceVAT}</typ:priceVAT>
+\t\t\t\t\t\t<typ:priceSum>${priceSum}</typ:priceSum>
+\t\t\t\t\t</pri:homeCurrency>
+\t\t\t\t\t<pri:code>${xesc(it.code)}</pri:code>
+\t\t\t\t\t<pri:stockItem>
+\t\t\t\t\t\t<typ:store>
+\t\t\t\t\t\t\t<typ:ids>${xesc(storeVal)}</typ:ids>
+\t\t\t\t\t\t</typ:store>
+\t\t\t\t\t\t<typ:stockItem>
+\t\t\t\t\t\t\t<typ:ids>${xesc(it.code)}</typ:ids>
+\t\t\t\t\t\t</typ:stockItem>
+\t\t\t\t\t</pri:stockItem>
+\t\t\t\t</pri:prijemkaItem>`;
+  }).join('\n');
+
+  totalPrice=round2(totalPrice); totalVAT=round2(totalVAT); totalSum=round2(totalSum);
+  // customerName jde do poznámky (pri:text), volitelná extra poznámka se přidá za pomlčku
+  const noteVal = [customer.customerName, customer.note].filter(Boolean).join(' — ');
+  const noteTag = noteVal ? `\n\t\t\t\t<pri:text>${xesc(noteVal)}</pri:text>` : '';
+
+  return `<?xml version="1.0" encoding="Windows-1250"?>
+<dat:dataPack version="2.0" id="Usr01" ico="60279354" key="${uuid}" programVersion="14306.5 (26.8.2026)" application="Transformace" note="U\u017Eivatelsk\u00FD export" xmlns:dat="http://www.stormware.cz/schema/version_2/data.xsd">
+\t<dat:dataPackItem version="2.0" id="Usr01 (001)">
+\t\t<pri:prijemka version="2.0" xmlns:pri="http://www.stormware.cz/schema/version_2/prijemka.xsd">
+\t\t\t<pri:prijemkaHeader ${NS}>
+\t\t\t\t<pri:number>
+\t\t\t\t\t<typ:numberRequested>${xesc(customer.receiptNumber)}</typ:numberRequested>
+\t\t\t\t</pri:number>
+\t\t\t\t<pri:date>${date}</pri:date>${noteTag}
+\t\t\t\t<pri:partnerIdentity>
+\t\t\t\t\t<typ:address linkToAddress="true">
+\t\t\t\t\t\t<typ:company>Raja Radomil</typ:company>
+\t\t\t\t\t\t<typ:city>Železný Brod</typ:city>
+\t\t\t\t\t\t<typ:street>Horecká 260</typ:street>
+\t\t\t\t\t\t<typ:zip>468 22</typ:zip>
+\t\t\t\t\t\t<typ:ico>49882431</typ:ico>
+\t\t\t\t\t\t<typ:dic>CZ6508212249</typ:dic>
+\t\t\t\t\t</typ:address>
+\t\t\t\t</pri:partnerIdentity>
+\t\t\t\t<pri:isExecuted>false</pri:isExecuted>
+\t\t\t\t<pri:isDelivered>false</pri:isDelivered>
+\t\t\t\t<pri:lock2>false</pri:lock2>
+\t\t\t\t<pri:markRecord>false</pri:markRecord>
+\t\t\t</pri:prijemkaHeader>
+\t\t\t<pri:prijemkaDetail ${NS}>
+${itemsXML}
+\t\t\t</pri:prijemkaDetail>
+\t\t\t<pri:prijemkaSummary ${NS}>
+\t\t\t\t<pri:roundingDocument>none</pri:roundingDocument>
+\t\t\t\t<pri:roundingVAT>none</pri:roundingVAT>
+\t\t\t\t<pri:typeCalculateVATInclusivePrice>VATNewMethod</pri:typeCalculateVATInclusivePrice>
+\t\t\t\t<pri:homeCurrency>
+\t\t\t\t\t<typ:priceNone>0</typ:priceNone>
+\t\t\t\t\t<typ:priceLow>0</typ:priceLow>
+\t\t\t\t\t<typ:priceLowVAT>0</typ:priceLowVAT>
+\t\t\t\t\t<typ:priceLowSum>0</typ:priceLowSum>
+\t\t\t\t\t<typ:priceHigh>${totalPrice}</typ:priceHigh>
+\t\t\t\t\t<typ:priceHighVAT>${totalVAT}</typ:priceHighVAT>
+\t\t\t\t\t<typ:priceHighSum>${totalSum}</typ:priceHighSum>
+\t\t\t\t\t<typ:round>
+\t\t\t\t\t\t<typ:priceRound>0</typ:priceRound>
+\t\t\t\t\t</typ:round>
+\t\t\t\t</pri:homeCurrency>
+\t\t\t</pri:prijemkaSummary>
+\t\t</pri:prijemka>
+\t</dat:dataPackItem>
+</dat:dataPack>`;
+}
+
+// Windows-1250 encoding table (Unicode → byte)
+const W1250 = {
+  0x20AC:0x80,0x201A:0x82,0x201E:0x84,0x2026:0x85,0x2020:0x86,0x2021:0x87,
+  0x2030:0x89,0x0160:0x8A,0x2039:0x8B,0x015A:0x8C,0x0164:0x8D,0x017D:0x8E,
+  0x0179:0x8F,0x2018:0x91,0x2019:0x92,0x201C:0x93,0x201D:0x94,0x2022:0x95,
+  0x2013:0x96,0x2014:0x97,0x2122:0x99,0x0161:0x9A,0x203A:0x9B,0x015B:0x9C,
+  0x0165:0x9D,0x017E:0x9E,0x017A:0x9F,0x02C7:0xA1,0x02D8:0xA2,0x0141:0xA3,
+  0x00A4:0xA4,0x0104:0xA5,0x00A6:0xA6,0x00A7:0xA7,0x00A8:0xA8,0x00A9:0xA9,
+  0x015E:0xAA,0x00AB:0xAB,0x00AC:0xAC,0x00AD:0xAD,0x00AE:0xAE,0x017B:0xAF,
+  0x00B0:0xB0,0x00B1:0xB1,0x02DB:0xB2,0x0142:0xB3,0x00B4:0xB4,0x00B5:0xB5,
+  0x00B6:0xB6,0x00B7:0xB7,0x00B8:0xB8,0x0105:0xB9,0x015F:0xBA,0x00BB:0xBB,
+  0x013D:0xBC,0x02DD:0xBD,0x013E:0xBE,0x017C:0xBF,0x0154:0xC0,0x00C1:0xC1,
+  0x00C2:0xC2,0x0102:0xC3,0x00C4:0xC4,0x0139:0xC5,0x0106:0xC6,0x00C7:0xC7,
+  0x010C:0xC8,0x00C9:0xC9,0x0118:0xCA,0x00CB:0xCB,0x011A:0xCC,0x00CD:0xCD,
+  0x00CE:0xCE,0x010E:0xCF,0x0110:0xD0,0x0143:0xD1,0x0147:0xD2,0x00D3:0xD3,
+  0x00D4:0xD4,0x0150:0xD5,0x00D6:0xD6,0x00D7:0xD7,0x0158:0xD8,0x016E:0xD9,
+  0x00DA:0xDA,0x0170:0xDB,0x00DC:0xDC,0x00DD:0xDD,0x0162:0xDE,0x00DF:0xDF,
+  0x0155:0xE0,0x00E1:0xE1,0x00E2:0xE2,0x0103:0xE3,0x00E4:0xE4,0x013A:0xE5,
+  0x0107:0xE6,0x00E7:0xE7,0x010D:0xE8,0x00E9:0xE9,0x0119:0xEA,0x00EB:0xEB,
+  0x011B:0xEC,0x00ED:0xED,0x00EE:0xEE,0x010F:0xEF,0x0111:0xF0,0x0144:0xF1,
+  0x0148:0xF2,0x00F3:0xF3,0x00F4:0xF4,0x0151:0xF5,0x00F6:0xF6,0x00F7:0xF7,
+  0x0159:0xF8,0x016F:0xF9,0x00FA:0xFA,0x0171:0xFB,0x00FC:0xFC,0x00FD:0xFD,
+  0x0163:0xFE,0x02D9:0xFF,
+  // A0-based that match Latin-1
+  0x00A0:0xA0,0x00A9:0xA9,0x00AB:0xAB,0x00BB:0xBB
+};
+
+function toW1250(str) {
+  const bytes = new Uint8Array(str.length);
+  let len = 0;
+  for(let i = 0; i < str.length; i++) {
+    const c = str.charCodeAt(i);
+    if(c < 0x80) { bytes[len++] = c; }
+    else { const b = W1250[c]; bytes[len++] = b !== undefined ? b : 63; }
+  }
+  return bytes.slice(0, len);
+}
+
+function xmlBlob(xmlStr) { return new Blob([toW1250(xmlStr)], {type:'application/xml'}); }
+
+function safeFilename(customer) {
+  const safe = (customer.customerName||'zakaznik').replace(/[/\\?%*:|"<>]/g,'_').substring(0,40).trim();
+  return `${customer.receiptNumber}_${safe}.xml`;
+}
+
+async function downloadAllSeparate() {
+  if(!_customers.length) return;
+  const dlStatus = document.getElementById('dl-status');
+  for(let i=0; i<_customers.length; i++) {
+    const c = _customers[i];
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(xmlBlob(generateXML(c)));
+    a.download = safeFilename(c);
+    a.click();
+    URL.revokeObjectURL(a.href);
+    await new Promise(r => setTimeout(r, 300));
+  }
+  dlStatus.textContent = `✅ Staženo ${_customers.length} souborů.`;
+}
+
+function downloadSingleXML(ci) {
+  const c = _customers[ci]; if(!c) return;
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(xmlBlob(generateXML(c)));
+  a.download = safeFilename(c);
+  a.click(); URL.revokeObjectURL(a.href);
+}
+
+async function generateInvoiceXLSX(customer, invoiceNum) {
+  const EJ = window.ExcelJS;
+  const wb = new EJ.Workbook();
+  const ws = wb.addWorksheet('List1');
+
+  ws.columns = [
+    {width: 2},   // A
+    {width: 26},  // B — Předmět plnění (delší názvy se zalamují)
+    {width: 16},  // C — DIČ "CZ6508212249"=12, účet "2288034-574/0600"=16
+    {width: 9},   // D
+    {width: 9},   // E — Sazba DPH
+    {width: 14},  // F — Bez DPH
+    {width: 12},  // G — DPH
+    {width: 13},  // H — S DPH
+    {width: 2},   // I
+  ];
+
+  ws.pageSetup = {
+    paperSize: 9,          // A4
+    orientation: 'portrait',
+    fitToPage: true,
+    fitToWidth: 1,
+    fitToHeight: 1,
+    margins: {left:0.7, right:0.7, top:0.75, bottom:0.75, header:0.3, footer:0.3},
+  };
+
+  const invoiceDateVal = (document.getElementById('invoice-date')||{}).value;
+  const today = invoiceDateVal ? new Date(invoiceDateVal + 'T12:00:00') : new Date();
+  const items = (customer.items||[]).filter(it => it.qty > 0);
+  const HR = 17;
+
+  const thin = {style:'thin'};
+  const thinAll = {top:thin, left:thin, bottom:thin, right:thin};
+  const priceFmt = '#,##0.00';
+  const arial = n => ({name:'Arial', size: n||10});
+
+  const sc = (r, c, val, opt) => {
+    const cell = ws.getRow(r).getCell(c);
+    cell.value = val;
+    if(opt) {
+      if(opt.font) cell.font = opt.font;
+      if(opt.alignment) cell.alignment = opt.alignment;
+      if(opt.border) cell.border = opt.border;
+      if(opt.fill) cell.fill = opt.fill;
+      if(opt.numFmt) cell.numFmt = opt.numFmt;
+    }
+  };
+
+  const right = {horizontal:'right'};
+  const center = {horizontal:'center'};
+
+  const ITEM_MAX = Math.max(31, HR + items.length); // poslední řádek tabulky
+  const medium = {style:'medium'};
+  // Helper: border pro buňky v tabulce (vnější=medium, vnitřní=thin)
+  const ib = (r, c) => ({
+    top:    r === HR         ? medium : thin,
+    bottom: r === ITEM_MAX   ? medium : thin,
+    left:   c === 2          ? medium : thin,
+    right:  c === 8          ? medium : thin,
+  });
+
+  // Helper pro sloučení buněk + nastavení hodnoty na levé buňce
+  const mg = (r, c1, c2, val, opt) => {
+    ws.mergeCells(r, c1, r, c2);
+    sc(r, c1, val, opt);
+  };
+
+  // Výšky řádků hlavičky
+  ws.getRow(1).height = 32;
+  ws.getRow(17).height = 20;
+
+  // ── Řádek 1: Nadpis (sloučené E1:H1) ──
+  mg(1,5,8,'FAKTURA - DAŇOVÝ DOKLAD',{font:{...arial(18),bold:true}, alignment:{horizontal:'center', vertical:'middle'}});
+
+  // ── Řádek 2: Číslo faktury (popisek sloučené C2:F2) ──
+  mg(2,3,6,'Faktura číslo/ev. číslo daňového dokladu:',{font:{...arial(),bold:true}, alignment:{horizontal:'right'}});
+  sc(2,7,'2026-',{font:arial()});
+  sc(2,8,String(invoiceNum||''),{font:{...arial(),bold:true}});
+
+  // ── Řádky 3–11: Dodavatel / Odběratel ──
+  sc(3,2,'Dodavatel:',{font:{...arial(),bold:true}});
+  mg(3,5,6,'č. objednávky:',{font:arial(), alignment:{horizontal:'right'}});
+  sc(3,7,customer.customerName||'',{font:{...arial(),bold:true}});
+
+  sc(4,2,'Radomil Raja',{font:arial()});
+  sc(4,3,'IČ:',{font:arial()});
+  sc(4,5,'konstantní symbol:',{font:arial()});
+  sc(4,7,'0308',{font:arial()});
+
+  sc(5,2,'Horecká 260',{font:arial()});
+  sc(5,3,'49882431',{font:arial()});
+  sc(5,5,'Odběratel:',{font:{...arial(),bold:true}});
+  sc(5,6,'BOHEMIAN GIFTS s.r.o.',{font:arial()});
+
+  sc(6,2,'Železný Brod',{font:arial()});
+  sc(6,3,'DIČ:',{font:{...arial(),bold:true}});
+  sc(6,6,'Zásada 162',{font:arial()});
+
+  sc(7,2,'468 22',{font:arial()});
+  sc(7,3,'CZ6508212249',{font:arial()});
+  sc(7,6,'Zásada',{font:arial()});
+
+  sc(8,6,'468 25',{font:arial()});
+
+  sc(9,2,'Peněžní ústav:',{font:{...arial(),bold:true}});
+  sc(9,3,'Money Bank',{font:arial()});
+
+  sc(10,2,'Číslo účtu:',{font:{...arial(),bold:true}});
+  sc(10,3,'2288034-574/0600',{font:arial()});
+  sc(10,5,'IČ:',{font:arial()});
+  sc(10,6,'60279354',{font:arial()});
+
+  sc(11,5,'DIČ:',{font:arial()});
+  sc(11,6,'CZ60279354',{font:arial()});
+
+  // ── Řádky 13–16: Platební podmínky (popisky sloučené E:F) ──
+  mg(13,5,6,'Způsob platby:',{font:{...arial(),bold:true}, alignment:{horizontal:'right'}});
+  sc(13,7,'PP',{font:arial()});
+
+  mg(14,5,6,'Datum splatnosti:',{font:{...arial(),bold:true}, alignment:{horizontal:'right'}});
+  sc(50,1,14,{font:{color:{argb:'FFFFFFFF'}}}); // konstanta: počet dní splatnosti (skrytá bílým písmem)
+  const dueDate = new Date(today); dueDate.setDate(dueDate.getDate()+14);
+  sc(14,7,{formula:'G15+A50', result:dueDate},{numFmt:'DD.MM.YYYY',font:arial()});
+
+  mg(15,5,6,'Datum vystavení:',{font:{...arial(),bold:true}, alignment:{horizontal:'right'}});
+  sc(15,7,today,{numFmt:'DD.MM.YYYY',font:arial()});
+
+  mg(16,5,6,'Datum zdanitelného plnění:',{font:{...arial(),bold:true}, alignment:{horizontal:'right'}});
+  sc(16,7,{formula:'G15', result:today},{numFmt:'DD.MM.YYYY',font:arial()});
+
+  // ── Řádek 17: Záhlaví tabulky ──
+  const hdrFill = {type:'pattern',pattern:'solid',fgColor:{argb:'FFD9D9D9'}};
+  const hdrFont = {...arial(),bold:true};
+  sc(17,2,'Předmět plnění:',{font:hdrFont, fill:hdrFill, border:ib(17,2), alignment:{horizontal:'left'}});
+  sc(17,3,'Počet j.',      {font:hdrFont, fill:hdrFill, border:ib(17,3), alignment:right});
+  sc(17,4,'Cena j.',       {font:hdrFont, fill:hdrFill, border:ib(17,4), alignment:right});
+  sc(17,5,'Sazba DPH',     {font:hdrFont, fill:hdrFill, border:ib(17,5), alignment:right});
+  sc(17,6,'Bez DPH',       {font:hdrFont, fill:hdrFill, border:ib(17,6), alignment:right});
+  sc(17,7,'DPH',           {font:hdrFont, fill:hdrFill, border:ib(17,7), alignment:right});
+  sc(17,8,'S DPH',         {font:hdrFont, fill:hdrFill, border:ib(17,8), alignment:right});
+
+  // ── Řádky 18+: Položky ──
+  const totalBez = items.reduce((s,it) => s + it.qty*(it.purchasePrice||0), 0);
+  const totalDph = totalBez * 0.21;
+  const rowFill = {type:'pattern',pattern:'solid',fgColor:{argb:'FFD9D9D9'}};
+  items.forEach((it, i) => {
+    const r = HR + 1 + i;
+    const bezDPH = it.qty * (it.purchasePrice||0);
+    const dph = bezDPH * 0.21;
+    const name = it.name||it.code||'';
+    // Výška řádku podle délky názvu (zalamuje se)
+    ws.getRow(r).height = name.length > 22 ? 30 : 16;
+    sc(r,2, name,                 {font:arial(), fill:rowFill, border:ib(r,2), alignment:{wrapText:true}});
+    sc(r,3, it.qty,               {font:arial(), fill:rowFill, border:ib(r,3), alignment:right, numFmt:'#,##0'});
+    sc(r,4, it.purchasePrice||0,  {font:arial(), fill:rowFill, border:ib(r,4), alignment:right, numFmt:priceFmt});
+    sc(r,5, 0.21,                 {font:arial(), fill:rowFill, border:ib(r,5), alignment:{horizontal:'center'}, numFmt:'0%'});
+    sc(r,6, {formula:`C${r}*D${r}`, result:bezDPH},      {font:arial(), fill:rowFill, border:ib(r,6), alignment:right, numFmt:priceFmt});
+    sc(r,7, {formula:`E${r}*F${r}`, result:dph},          {font:arial(), fill:rowFill, border:ib(r,7), alignment:right, numFmt:priceFmt});
+    sc(r,8, {formula:`G${r}+F${r}`, result:bezDPH+dph},   {font:arial(), fill:rowFill, border:ib(r,8), alignment:right, numFmt:priceFmt});
+  });
+
+  // Prázdné řádky tabulky (od posledního záznamu do ITEM_MAX)
+  for(let r = HR + 1 + items.length; r <= ITEM_MAX; r++) {
+    for(let c = 2; c <= 8; c++) {
+      const cell = ws.getRow(r).getCell(c);
+      cell.fill = rowFill;
+      cell.border = ib(r, c);
+    }
+  }
+
+  // ── Řádky 34–36: Souhrn (Celkem bez DPH / DPH / s DPH) ──
+  const sumBorder = {top:thin, bottom:thin, left:thin, right:thin};
+  const sumLbl = {font:{...arial(),bold:true}, alignment:right, border:sumBorder};
+  const sumVal = {font:{...arial(),bold:true}, alignment:right, numFmt:priceFmt, border:sumBorder};
+  // Zvýraznění řádku "Celkem s DPH" světle modrou
+  const totalFill = {type:'pattern',pattern:'solid',fgColor:{argb:'FFD5E8F5'}};
+  const totalBorder = {top:{style:'medium'}, bottom:{style:'medium'}, left:thin, right:{style:'medium'}};
+  sc(34,6,'Celkem bez DPH', sumLbl);
+  sc(34,7,{formula:`SUM(F18:F${ITEM_MAX})`, result:totalBez},   sumVal);
+  sc(35,6,'Celkem DPH',     sumLbl);
+  sc(35,7,{formula:`SUM(G18:G${ITEM_MAX})`, result:totalDph},   sumVal);
+  sc(36,6,'Celkem s DPH',   {...sumLbl, fill:totalFill, font:{...arial(10),bold:true}, border:totalBorder});
+  sc(36,7,{formula:`SUM(H18:H${ITEM_MAX})`, result:totalBez+totalDph},
+          {...sumVal, fill:totalFill, font:{...arial(10),bold:true}, border:{...totalBorder, left:thin}});
+  ws.getRow(36).height = 18;
+
+  // ── Řádek 38: Poznámka o cenách ──
+  sc(38,5,'Ceny jsou uvedeny v Kč',{font:{...arial(),italic:true}});
+
+  // ── Řádek 41: Právní doložka ──
+  sc(41,2,'Podn. činnost povolena na zákl. ž.č. 260/95/21Zl.',{font:arial()});
+
+  // ── Řádek 44: Podpis ──
+  sc(44,5,'vystavil(a):',{font:arial()});
+  for(let c = 6; c <= 8; c++) {
+    ws.getRow(44).getCell(c).border = {bottom:{style:'dotted'}};
+  }
+
+  return await wb.xlsx.writeBuffer();
+}
+
+function getStartInvoiceNumber() {
+  const inp = document.getElementById('first-invoice-number');
+  const val = inp ? inp.value.trim() : '';
+  if(val && /^\d+$/.test(val)) return parseInt(val);
+  const last = localStorage.getItem('prijemky_last_invoice');
+  if(last) return parseInt(last) + 1;
+  return 107;
+}
+
+async function prepareFaktury() {
+  if(!_customers.length) return;
+  const dlStatus = document.getElementById('dl-status');
+  const btnDl = document.getElementById('btn-dl-faktury');
+  dlStatus.textContent = '⏳ Generuji faktury…';
+  if(btnDl) { btnDl.disabled = true; btnDl.style.opacity = '0.4'; btnDl.style.cursor = 'not-allowed'; }
+  _fakturyBlob = null;
+  try {
+    const zip = new JSZip();
+    const startNum = getStartInvoiceNumber();
+
+    const scans = _scans.length
+      ? _scans
+      : _files.filter(f => f.type==='application/pdf' || f.type.startsWith('image/'));
+
+    for(let i=0; i<_customers.length; i++) {
+      const c = _customers[i];
+      const num = startNum + i;
+      const safe = (c.customerName||'zakaznik').replace(/[/\\?%*:|"<>]/g,'_').substring(0,30).trim();
+      const base = `${num}_${safe}`;
+      zip.file(base + '.xlsx', await generateInvoiceXLSX(c, num));
+      if(scans.length > 0) {
+        const combined = await combineScansToOnePDF(scans);
+        zip.file(`${base}_scan.${combined.ext}`, combined.buffer);
+      }
+    }
+
+    _fakturyBlob = await zip.generateAsync({type:'blob'});
+    _fakturyFilename = `faktury_${new Date().toISOString().split('T')[0]}.zip`;
+
+    // Zapamatuj poslední číslo faktury
+    saveLastInvoiceNumber(startNum + _customers.length - 1);
+    loadLastInvoiceNumber();
+
+    const scanCount = scans.length;
+    dlStatus.textContent = `✅ Připraveno: ${_customers.length} faktur (${startNum}–${startNum+_customers.length-1})` +
+      (scanCount ? ` · ${scanCount} skeny` : ' · bez skenů') +
+      ' — klikněte ⬇ Stáhnout ZIP';
+    if(btnDl) { btnDl.disabled = false; btnDl.style.opacity = '1'; btnDl.style.cursor = 'pointer'; }
+  } catch(e) { dlStatus.textContent = '⚠ ' + e.message; }
+}
+
+function downloadFaktury() {
+  if(!_fakturyBlob) {
+    document.getElementById('dl-status').textContent = '⚠ Nejdříve klikněte na „Vygenerovat faktury"';
+    return;
+  }
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(_fakturyBlob);
+  a.download = _fakturyFilename || `faktury_${new Date().toISOString().split('T')[0]}.zip`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+async function downloadAllSFakturami() {
+  // kept for compatibility
+  await downloadFaktury();
+}
+
+async function downloadAllXML() {
+  if(!_customers.length) return;
+  const dlStatus = document.getElementById('dl-status');
+  dlStatus.textContent = '⏳ Generuji ZIP…';
+  try {
+    const zip = new JSZip();
+    _customers.forEach(c => zip.file(safeFilename(c), toW1250(generateXML(c))));
+    const blob = await zip.generateAsync({type:'blob'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `prijemky_${new Date().toISOString().split('T')[0]}.zip`;
+    a.click(); URL.revokeObjectURL(a.href);
+    dlStatus.textContent = `✅ Staženo ${_customers.length} XML souborů.`;
+  } catch(e) { dlStatus.textContent = '⚠ ' + e.message; }
+}
+
+function runValidation() {
+  const warnings = [];
+  _customers.forEach((c, ci) => {
+    const label = `Zákazník ${ci+1}${c.customerName ? ' ('+c.customerName+')' : ''}`;
+    if(!c.customerName) warnings.push(`⚠ ${label}: chybí jméno zákazníka`);
+    if(!c.receiptNumber) warnings.push(`⚠ ${label}: chybí číslo příjemky`);
+    c.items.forEach((it, ii) => {
+      if(!it.code) warnings.push(`⚠ ${label}, položka ${ii+1} "${it.name||'?'}": neznámý kód katalogu`);
+      if(!it.qty || it.qty <= 0) warnings.push(`⚠ ${label}, položka ${ii+1} "${it.name||'?'}": množství je ${it.qty||0}`);
+      if(it.qty > 999) warnings.push(`⚠ ${label}, položka ${ii+1} "${it.name||'?'}": množství ${it.qty} — opravdu?`);
+    });
+    if(!c.items.length) warnings.push(`⚠ ${label}: nemá žádné položky`);
+  });
+  const panel = document.getElementById('validation-panel');
+  if(!panel) return;
+  if(!warnings.length) { panel.style.display='none'; return; }
+  panel.style.display = 'block';
+  panel.innerHTML = `<strong>Zkontrolujte před stažením:</strong><ul style="margin:6px 0 0 0;padding-left:18px">${warnings.map(w=>`<li>${w}</li>`).join('')}</ul>`;
+}
+
+function esc(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+</script>
+</body>
+</html>
