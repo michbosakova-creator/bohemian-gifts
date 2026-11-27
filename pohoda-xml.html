@@ -366,12 +366,8 @@
     <div class="settings-body" id="vyd-settings-body">
       <div class="form-row">
         <div class="form-group">
-          <label for="vyd-api-key">Claude API klíč</label>
-          <div style="display:flex;gap:8px">
-            <input type="password" id="vyd-api-key" placeholder="sk-ant-api03-..." style="flex:1">
-            <button class="btn-today" onclick="vydSaveApiKey()">Uložit</button>
-          </div>
-          <p class="hint">Klíč se uloží do localStorage tohoto prohlížeče.</p>
+          <label>Claude API klíč</label>
+          <p class="hint" style="margin:0;color:#2a7ae2">🔑 Používá se stejný API klíč jako v záložce <strong>Faktura PRECIOSA</strong> — zadejte ho tam.</p>
         </div>
       </div>
       <div class="form-group" style="margin-top:14px">
@@ -2828,7 +2824,7 @@ function toggleSettings(){
 }
 
 function vydSaveApiKey(){
-  const key = document.getElementById('vyd-api-key').value.trim();
+  const key = document.getElementById('inv-api-key').value.trim();
   if(!key){ alert('Zadejte API klíč.'); return; }
   localStorage.setItem('vydejka_api_key', key);
   vydUpdateStatusPills();
@@ -3384,7 +3380,7 @@ if(savedInvDate) document.getElementById('invoice-date').value=savedInvDate;
 
 // Obnovit API klíč z localStorage
 const savedKey=localStorage.getItem('vydejka_api_key');
-if(savedKey) document.getElementById('vyd-api-key').value=savedKey;
+if(savedKey) document.getElementById('inv-api-key').value=savedKey;
 
 // Obnovit produktový seznam z localStorage
 const savedProducts=localStorage.getItem('vydejka_products_v2');
