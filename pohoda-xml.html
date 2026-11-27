@@ -459,8 +459,8 @@
           <thead>
             <tr>
               <th>#</th>
-              <th>Kód (z fotky)</th>
-              <th>Název ze skladu</th>
+              <th>Kód</th>
+              <th>Název</th>
               <th>Množ.</th>
               <th>Shoda</th>
               <th></th>
@@ -3190,16 +3190,18 @@ function vydBuildReviewTable(aiItems){
 
 function vydAppendRow(tbody, num, rawCode, match, qty){
   const tr=document.createElement('tr');
-  const confTag=match.found
-    ? '<span class="tag ok">✓ nalezeno</span>'
-    : '<span class="tag err">✗ nenalezeno</span>';
+  const nameVal=match.name==='—'?'':match.name;
   tr.innerHTML=`
     <td style="color:#aaa;font-size:0.8rem">${num}</td>
-    <td><input type="text" class="code-input ${match.found?'ok':'nok'}" value="${esc(rawCode)}" onchange="vydRowCodeChanged(this)"></td>
-    <td class="name-cell">${esc(match.name)}</td>
+    <td><input type="text" class="code-input ${match.found?'ok':'nok'}" value="${esc(rawCode)}" onchange="vydRowCodeChanged(this)" style="width:100%"></td>
+    <td><input type="text" class="name-input" value="${esc(nameVal)}" placeholder="název" style="width:100%"></td>
     <td><input type="number" class="qty-input" value="${parseFloat(qty)||1}" min="0.1" step="1"></td>
-    <td>${confTag}</td>
-    <td><button class="btn-del" onclick="this.closest('tr').remove();vydRenumber()">×</button></td>
+    <td><span class="tag ${match.found?'ok':'err'}">${match.found?'✓':'✗'}</span></td>
+    <td style="white-space:nowrap">
+      <button class="btn-sm" onclick="vydMoveRow(this.closest('tr'),-1)" title="Přesunout nahoru" style="padding:1px 5px;font-size:11px;cursor:pointer">↑</button>
+      <button class="btn-sm" onclick="vydMoveRow(this.closest('tr'),1)" title="Přesunout dolů" style="padding:1px 5px;font-size:11px;cursor:pointer">↓</button>
+      <button class="btn-del" onclick="this.closest('tr').remove();vydRenumber()">×</button>
+    </td>
   `;
   tbody.appendChild(tr);
 }
@@ -3208,10 +3210,21 @@ function vydRowCodeChanged(input){
   const tr=input.closest('tr');
   const match=vydMatchCode(input.value.trim());
   input.className='code-input '+(match.found?'ok':'nok');
-  tr.cells[2].textContent=match.name;
+  const nameInput=tr.cells[2].querySelector('input');
+  if(nameInput) nameInput.value=match.name==='—'?'':match.name;
   tr.cells[4].innerHTML=match.found
-    ?'<span class="tag ok">✓ nalezeno</span>'
-    :'<span class="tag err">✗ nenalezeno</span>';
+    ?'<span class="tag ok">✓</span>'
+    :'<span class="tag err">✗</span>';
+}
+
+function vydMoveRow(tr, dir){
+  const tbody=tr.closest('tbody');
+  if(dir===-1 && tr.previousElementSibling){
+    tbody.insertBefore(tr,tr.previousElementSibling);
+  } else if(dir===1 && tr.nextElementSibling){
+    tbody.insertBefore(tr.nextElementSibling,tr);
+  }
+  vydRenumber();
 }
 
 function vydAddRow(){

@@ -166,7 +166,7 @@ td input.warn { border-color: #e67e22; background: #fff8f2; }
       ondragleave="this.classList.remove('over')"
       ondrop="handleDrop(event)">
       <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="display:block;margin:0 auto 10px;opacity:0.4"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-      Přetáhněte sem PDF, Excel (.xlsx) nebo obrázky (max. 2 soubory)<br>
+      Přetáhněte sem PDF, Excel (.xlsx) nebo obrázky (max. 5 souborů)<br>
       <span style="font-size:0.8rem;color:#aaa">— nebo klikněte pro výběr —</span>
     </div>
     <input type="file" id="file-input" accept=".pdf,.xlsx,.xls,image/*" multiple style="display:none" onchange="handleFiles(this.files)">
@@ -225,7 +225,7 @@ td input.warn { border-color: #e67e22; background: #fff8f2; }
       <span id="dl-status"></span>
     </div>
     <div style="background:#1e3f60;border-radius:8px;padding:14px 18px;margin-top:8px">
-      <div style="color:#a0c8e8;font-size:0.82rem;font-weight:600;margin-bottom:10px">📎 Skeny k fakturám (max. 2 soubory)</div>
+      <div style="color:#a0c8e8;font-size:0.82rem;font-weight:600;margin-bottom:10px">📎 Skeny k fakturám (max. 5 souborů)</div>
       <div id="scan-drop-zone"
         onclick="document.getElementById('scan-input').click()"
         ondragover="event.preventDefault();this.style.borderColor='#7ab8e8';this.style.background='rgba(255,255,255,0.1)'"
@@ -479,7 +479,7 @@ function handleDrop(e) {
 }
 function handleFiles(fileList) {
   Array.from(fileList).forEach(f => {
-    if(_files.length >= 2) return;
+    if(_files.length >= 5) return;
     if(_files.some(x => x.name === f.name)) return;
     if(f.type.startsWith('image/') || f.type === 'application/pdf' ||
        f.name.match(/\.xlsx?$/i)) _files.push(f);
@@ -542,7 +542,7 @@ async function combineScansToOnePDF(scans) {
 
 function handleScanFiles(fileList) {
   Array.from(fileList).forEach(f => {
-    if(_scans.length >= 2) return;
+    if(_scans.length >= 5) return;
     if(_scans.some(x => x.name === f.name)) return;
     if(f.type.startsWith('image/') || f.type === 'application/pdf') _scans.push(f);
   });
