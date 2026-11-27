@@ -168,7 +168,30 @@
   </svg>
   <h1>POHODA XML Import</h1>
   <span class="badge">Bohemian Gifts</span>
+  <button onclick="openPohSettings()" style="margin-left:auto;background:rgba(255,255,255,0.15);border:none;border-radius:6px;color:white;padding:6px 12px;font-size:13px;cursor:pointer;font-weight:600">⚙ Nastavení</button>
 </header>
+
+<!-- Nastavení modal -->
+<div id="poh-settings-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:1000;align-items:center;justify-content:center">
+  <div style="background:white;border-radius:12px;padding:28px;width:400px;max-width:90vw;box-shadow:0 8px 32px rgba(0,0,0,0.2)">
+    <h2 style="font-size:1rem;font-weight:700;color:#1a3a5c;margin-bottom:20px">⚙ Nastavení aplikace</h2>
+    <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:16px">
+      <label style="font-size:0.82rem;font-weight:600;color:#555">Claude API klíč</label>
+      <input type="password" id="poh-s-api-key" placeholder="sk-ant-…" style="padding:9px 12px;border:1.5px solid #d0d7e0;border-radius:6px;font-size:0.92rem;font-family:inherit">
+    </div>
+    <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:24px">
+      <label style="font-size:0.82rem;font-weight:600;color:#555">Model AI</label>
+      <select id="poh-s-model" style="padding:9px 12px;border:1.5px solid #d0d7e0;border-radius:6px;font-size:0.92rem;background:#fff;cursor:pointer">
+        <option value="claude-haiku-4-5-20251001">Haiku — rychlý, kratší dokumenty</option>
+        <option value="claude-sonnet-5-5">Sonnet — přesný, velké dokumenty ✓</option>
+      </select>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end">
+      <button onclick="closePohSettings()" style="padding:8px 18px;border:1.5px solid #d0d7e0;border-radius:6px;background:white;font-size:0.88rem;cursor:pointer">Zavřít</button>
+      <button onclick="savePohSettings()" style="padding:8px 18px;background:#1a3a5c;color:white;border:none;border-radius:6px;font-size:0.88rem;font-weight:700;cursor:pointer">Uložit</button>
+    </div>
+  </div>
+</div>
 
 <div class="tab-nav-bar">
   <button class="tab-btn active" id="tab-btn-faktura" onclick="switchTab('faktura')">Faktura PRECIOSA</button>
@@ -238,17 +261,16 @@
              onclick="this.focus()">📋 Klikněte → Ctrl+V</div>
       </div>
       <input type="file" id="fileInput" accept=".txt,.csv,.text,.pdf,application/pdf,image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp" multiple style="display:none" onchange="handleFile(event)">
-      <div id="img-api-row" style="display:none;margin-top:10px;background:#f8f9fb;border:1px solid #e0e4ea;border-radius:8px;padding:12px 14px">
-        <div style="font-size:13px;color:#555;margin-bottom:8px">Obrázek nahrán — zadejte Claude API klíč pro extrakci položek:</div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <input type="password" id="inv-api-key" placeholder="sk-ant-api03-..." style="flex:1;min-width:180px;padding:7px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;font-family:monospace">
-          <select id="inv-model" style="padding:7px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;background:#fff;cursor:pointer" title="Model AI pro extrakci">
-            <option value="claude-haiku-4-5-20251001">Haiku — rychlý, kratší faktury</option>
-            <option value="claude-sonnet-5-5">Sonnet — přesný, velké faktury ✓</option>
-          </select>
-          <button class="btn-primary" style="white-space:nowrap;padding:7px 16px" onclick="doExtractImage()">Extrahovat pomocí AI →</button>
-        </div>
-        <div style="font-size:12px;color:#888;margin-top:6px">💡 Haiku: rychlejší a levnější. Sonnet: výrazně přesnější u dlouhých faktur s mnoha položkami.</div>
+      <!-- API key a model jsou nyní v Nastavení (⚙) — hidden inputy pro zpětnou kompatibilitu -->
+      <input type="password" id="inv-api-key" style="display:none">
+      <select id="inv-model" style="display:none">
+        <option value="claude-haiku-4-5-20251001">Haiku</option>
+        <option value="claude-sonnet-5-5">Sonnet</option>
+      </select>
+      <div id="img-api-row" style="display:none"></div>
+      <div id="img-api-ready" style="display:none;margin-top:10px">
+        <button class="btn-primary" style="white-space:nowrap;padding:7px 16px" onclick="doExtractImage()">Extrahovat pomocí AI →</button>
+        <span style="font-size:12px;color:#888;margin-left:10px">Model: <span id="img-api-model-label">Haiku</span> · API klíč lze změnit v <button onclick="openPohSettings()" style="border:none;background:none;color:#2a7ae2;cursor:pointer;font-size:12px;padding:0;text-decoration:underline">⚙ Nastavení</button></span>
       </div>
       <div id="pohoda-invoice-section" style="margin-top:20px;border-top:2px dashed #e0e4ea;padding-top:16px">
         <div style="font-size:11px;font-weight:700;color:#888;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:10px">Porovnání s fakturou z Pohody — nezávislé na tvorbě XML</div>
@@ -1849,7 +1871,7 @@ function renderAllPDFPages(){
   const dz=document.getElementById('drop-zone');
   if(!_pdfPages.length){
     dz.innerHTML=_DROP_ZONE_EMPTY;
-    document.getElementById('img-api-row').style.display='none';
+    document.getElementById('img-api-ready').style.display='none';
     return;
   }
   const uniqueFiles=[...new Set(_pdfPages.map(p=>p.fileId))].length;
@@ -1962,10 +1984,7 @@ function renderAllPDFPages(){
     });
   });
   _pdfDragCleanup=()=>cleanups.forEach(fn=>fn());
-  const row=document.getElementById('img-api-row');
-  row.style.display='block';
-  row.querySelector('div').textContent='PDF nahráno — zadejte Claude API klíč pro extrakci položek:';
-  document.getElementById('inv-model').value='claude-haiku-4-5-20251001';
+  document.getElementById('img-api-ready').style.display='block';
   const saved=localStorage.getItem('vydejka_api_key')||'';
   if(saved) document.getElementById('inv-api-key').value=saved;
 }
@@ -1974,7 +1993,7 @@ function removePDFFromQueue(){
   if(_pdfDragCleanup){_pdfDragCleanup();_pdfDragCleanup=null;}
   _pdfPages=[];
   document.getElementById('drop-zone').innerHTML=_DROP_ZONE_EMPTY;
-  document.getElementById('img-api-row').style.display='none';
+  document.getElementById('img-api-ready').style.display='none';
   pdfDbClear();
 }
 
@@ -2664,7 +2683,7 @@ function removeImageFromQueue(idx){
   _pendingImageFiles.splice(idx,1);
   if(!_pendingImageFiles.length){
     document.getElementById('drop-zone').innerHTML=`<svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="16,16 12,12 8,16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>Přetáhněte sem screenshot (JPG/PNG), .txt nebo PDF`;
-    document.getElementById('img-api-row').style.display='none';
+    document.getElementById('img-api-ready').style.display='none';
     imgDbClearQueue();
   } else {
     renderImageQueue();
@@ -2698,11 +2717,7 @@ function renderImageQueue(){
     };
     r.readAsDataURL(f);
   });
-  // Zobraz API klíč sekci
-  const row=document.getElementById('img-api-row');
-  row.style.display='block';
-  const saved=localStorage.getItem('vydejka_api_key')||'';
-  if(saved) document.getElementById('inv-api-key').value=saved;
+  document.getElementById('img-api-ready').style.display='block';
 }
 
 function addImagesToQueue(files){
@@ -2765,7 +2780,7 @@ async function doExtractImage(){
   const model=document.getElementById('inv-model').value;
   localStorage.setItem('vydejka_api_key',apiKey);
   if(!_pendingImageFiles.length&&!_pdfPages.length){alert('Nejprve nahrajte alespoň jeden screenshot nebo PDF faktury.');return;}
-  const btn=document.querySelector('#img-api-row button.btn-primary');
+  const btn=document.querySelector('#img-api-ready button.btn-primary');
   if(btn){btn.disabled=true;btn.textContent='⏳ Zpracovávám…';}
   let _timerSec=0;
   const _timerInterval=setInterval(()=>{
@@ -3847,7 +3862,38 @@ function epriDownloadXml(){
   a.download = `prijemka_erpet_${window._lastEpriNumber||'export'}.xml`; a.click();
 }
 
+// ── Nastavení (settings modal) ────────────────────────────────────────────────
+function openPohSettings(){
+  const k=localStorage.getItem('vydejka_api_key')||'';
+  const m=localStorage.getItem('app_model')||'claude-haiku-4-5-20251001';
+  document.getElementById('poh-s-api-key').value=k;
+  document.getElementById('poh-s-model').value=m;
+  document.getElementById('poh-settings-modal').style.display='flex';
+}
+function closePohSettings(){ document.getElementById('poh-settings-modal').style.display='none'; }
+function savePohSettings(){
+  const k=document.getElementById('poh-s-api-key').value.trim();
+  const m=document.getElementById('poh-s-model').value;
+  if(k) localStorage.setItem('vydejka_api_key',k);
+  localStorage.setItem('app_model',m);
+  // Sync hidden inputs
+  if(k) document.getElementById('inv-api-key').value=k;
+  document.getElementById('inv-model').value=m;
+  document.getElementById('img-api-model-label').textContent=m.includes('sonnet')?'Sonnet':'Haiku';
+  closePohSettings();
+  if(typeof vydUpdateStatusPills==='function') vydUpdateStatusPills();
+}
+
 // ── Init ──────────────────────────────────────────────────────────────────────
+// Načti uložený klíč a model do hidden inputů
+(function initPohSettings(){
+  const k=localStorage.getItem('vydejka_api_key')||'';
+  const m=localStorage.getItem('app_model')||'claude-haiku-4-5-20251001';
+  if(k) document.getElementById('inv-api-key').value=k;
+  document.getElementById('inv-model').value=m;
+  document.getElementById('img-api-model-label').textContent=m.includes('sonnet')?'Sonnet':'Haiku';
+})();
+
 setToday();
 vydSetToday();
 epriSetToday();
