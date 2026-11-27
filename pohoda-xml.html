@@ -174,6 +174,7 @@
   <button class="tab-btn active" id="tab-btn-faktura" onclick="switchTab('faktura')">Faktura PRECIOSA</button>
   <button class="tab-btn" id="tab-btn-vydejka" onclick="switchTab('vydejka')">Výdejka položková</button>
   <button class="tab-btn" id="tab-btn-erpet" onclick="switchTab('erpet')">Komisní prodej Erpet</button>
+  <button class="tab-btn" id="tab-btn-epri" onclick="switchTab('epri')">Příjemka Erpet</button>
   <button class="tab-btn" id="tab-btn-renumber" onclick="switchTab('renumber')">Přečíslovat XML</button>
   <a href="prijemky.html" class="tab-btn" style="text-decoration:none;display:flex;align-items:center">🎄 Příjemky — vánoční ozdoby</a>
 </div>
@@ -666,6 +667,148 @@
 
 </div><!-- /tab-erpet -->
 
+
+<!-- ══════════════════════════════════════════════════════════
+     TAB: PŘÍJEMKA ERPET
+══════════════════════════════════════════════════════════ -->
+<div id="tab-epri" class="tab-panel" style="display:none">
+
+  <!-- Nastavení -->
+  <div class="card">
+    <div class="settings-toggle" onclick="epriToggleSettings()">
+      <h2 style="margin-bottom:0;border:none;padding:0">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>
+        Nastavení
+      </h2>
+      <div style="display:flex;gap:8px;align-items:center">
+        <span id="epri-key-pill" class="status-pill nok">API klíč: ✗</span>
+        <span id="epri-prod-pill" class="status-pill nok">Produkty: ✗</span>
+        <span id="epri-settings-arrow" style="color:#aab8c8;font-size:1.1rem">▼</span>
+      </div>
+    </div>
+    <div class="settings-body" id="epri-settings-body">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Claude API klíč</label>
+          <p class="hint" style="margin:0;color:#2a7ae2">🔑 Používá se stejný API klíč jako v záložce <strong>Faktura PRECIOSA</strong> — zadejte ho tam.</p>
+        </div>
+      </div>
+      <div class="form-group" style="margin-top:14px">
+        <label>Produktový seznam (Skladové_zásoby.pdf z POHODY)</label>
+        <div class="drop-zone small" id="epri-pdf-drop"
+             onclick="document.getElementById('epri-pdf-input').click()"
+             ondragover="event.preventDefault();this.classList.add('over')"
+             ondragleave="this.classList.remove('over')"
+             ondrop="epriHandlePdfDrop(event)">
+          Přetáhněte PDF nebo klikněte pro výběr
+        </div>
+        <input type="file" id="epri-pdf-input" accept=".pdf" style="display:none" onchange="vydLoadProductPdf(event,'epri')">
+        <p class="hint" id="epri-product-status">Žádný seznam není načten. Bez něj nebude fungovat párování kódů.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Krokový indikátor -->
+  <div class="steps">
+    <div class="step active" id="epri-step1"><div class="step-num">1</div><span>Fotografie</span></div>
+    <div class="step-line" id="epri-line1"></div>
+    <div class="step" id="epri-step2"><div class="step-num">2</div><span>Kontrola</span></div>
+    <div class="step-line" id="epri-line2"></div>
+    <div class="step" id="epri-step3"><div class="step-num">3</div><span>XML</span></div>
+  </div>
+
+  <!-- KROK 1 -->
+  <div id="epri-step1-section">
+    <div class="msg-box error" id="epri-error-box"><strong>Chyba:</strong><ul id="epri-error-list"></ul></div>
+    <div class="card">
+      <h2>Nahrání ručně psaného seznamu</h2>
+      <div class="drop-zone" id="epri-photo-drop"
+           onclick="document.getElementById('epri-photo-input').click()"
+           ondragover="event.preventDefault();this.classList.add('over')"
+           ondragleave="this.classList.remove('over')"
+           ondrop="epriHandlePhotoDrop(event)">
+        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>
+          <polyline points="21,15 16,10 5,21"/>
+        </svg>
+        Přetáhněte fotografie (JPG, PNG) nebo PDF sem
+      </div>
+      <input type="file" id="epri-photo-input" accept="image/jpeg,image/png,image/webp,application/pdf" style="display:none" multiple onchange="epriHandlePhotoFile(event)">
+      <div id="epri-photo-queue-wrap" style="display:none;margin-top:10px"></div>
+      <div class="loading-box" id="epri-ai-loading">
+        <div class="spinner"></div>
+        <div id="epri-ai-status">AI čte seznam...</div>
+      </div>
+    </div>
+    <button class="btn-primary" id="epri-read-btn" onclick="epriReadWithAI()" disabled>Přečíst s AI →</button>
+  </div>
+
+  <!-- KROK 2 -->
+  <div id="epri-step2-section" style="display:none">
+    <button class="btn-reset" onclick="epriResetToStep1()">← Znovu nahrát foto</button>
+    <div class="msg-box error" id="epri-review-error"><strong>Chyba:</strong><ul id="epri-review-error-list"></ul></div>
+    <div class="card">
+      <h2>Nastavení příjemky</h2>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="epri-number">Číslo příjemky</label>
+          <input type="text" id="epri-number" placeholder="např. 26PR10001">
+        </div>
+        <div class="form-group">
+          <label for="epri-date">Datum příjemky</label>
+          <div class="date-row">
+            <input type="date" id="epri-date">
+            <button class="btn-today" onclick="epriSetToday()">Dnes</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Zkontrolujte a opravte položky</h2>
+      <div id="epri-unknown-warn" style="display:none;background:#fff8e1;border:1px solid #f9a825;border-radius:6px;padding:8px 12px;font-size:13px;color:#5d4037;margin-bottom:10px"></div>
+      <div style="overflow-x:auto">
+        <table class="review-table">
+          <thead><tr>
+            <th>#</th><th>Kód</th><th>Název</th><th>Množ.</th><th>Shoda</th><th></th>
+          </tr></thead>
+          <tbody id="epri-review-tbody"></tbody>
+        </table>
+      </div>
+      <button class="btn-add-row" onclick="epriAddRow()">+ Přidat řádek</button>
+    </div>
+    <button class="btn-primary green" onclick="epriGenerate()">Vygenerovat XML příjemky →</button>
+  </div>
+
+  <!-- KROK 3 -->
+  <div id="epri-step3-section" style="display:none">
+    <button class="btn-reset" onclick="epriResetToStep2()">← Zpět na kontrolu</button>
+    <div class="msg-box warning" id="epri-xml-codes-warn" style="display:none"><strong>⚠ Tyto kódy nebyly nalezeny v databázi — v XML jsou vloženy tak jak jsou:</strong><ul id="epri-xml-codes-list" style="margin-top:6px"></ul></div>
+    <div class="card">
+      <h2>Přehled</h2>
+      <div class="summary-grid">
+        <div class="summary-item"><div class="s-label">Číslo příjemky</div><div class="s-value" id="epri-sum-number">—</div></div>
+        <div class="summary-item"><div class="s-label">Datum</div><div class="s-value" id="epri-sum-date">—</div></div>
+        <div class="summary-item"><div class="s-label">Počet položek</div><div class="s-value" id="epri-sum-count">—</div></div>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Vygenerované XML</h2>
+      <div class="xml-block">
+        <div class="xml-toolbar">
+          <span id="epri-xml-filename">prijemka_erpet.xml</span>
+          <div class="xml-actions">
+            <button class="btn-sm btn-copy" onclick="copyXml('epri-xml-output')">Kopírovat</button>
+            <button class="btn-sm btn-download" onclick="epriDownloadXml()">Stáhnout .xml</button>
+          </div>
+        </div>
+        <textarea id="epri-xml-output" class="xml-output" readonly spellcheck="false"></textarea>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /tab-epri -->
+
+
 <!-- ══════════════════════════════════════════════════════════
      TAB: PŘEČÍSLOVAT XML
 ══════════════════════════════════════════════════════════ -->
@@ -749,16 +892,17 @@ function copyXml(id) {
   setTimeout(() => t.classList.remove('show'), 2000);
 }
 function switchTab(tab) {
-  ['faktura','vydejka','erpet','renumber'].forEach(t=>{
+  ['faktura','vydejka','erpet','epri','renumber'].forEach(t=>{
     document.getElementById('tab-'+t).style.display = tab===t ? 'block' : 'none';
     document.getElementById('tab-btn-'+t).classList.toggle('active', tab===t);
   });
   history.replaceState(null,'','#'+tab);
+  if(tab==='epri') epriUpdatePills();
 }
 // On load, switch to tab from URL hash
 (function(){
   const h = location.hash.replace('#','');
-  if(['vydejka','erpet','renumber'].includes(h)) switchTab(h);
+  if(['vydejka','erpet','epri','renumber'].includes(h)) switchTab(h);
 })();
 
 
@@ -2842,6 +2986,8 @@ function vydUpdateStatusPills(){
   pp.textContent = count ? `Produkty: ${count}` : 'Produkty: ✗';
   pp.className   = 'status-pill ' + (count ? 'ok' : 'nok');
   document.getElementById('vyd-read-btn').disabled = !(_vydPendingImages.length && key);
+  // Sync příjemka Erpet pills if function exists
+  if(typeof epriUpdatePills === 'function') epriUpdatePills();
 }
 
 // ── Produktový seznam PDF ─────────────────────────────────────────────────────
@@ -3374,9 +3520,289 @@ function vydDownloadXml(){
   a.download=`vydejka_${window._lastVydNumber||'export'}.xml`; a.click();
 }
 
+// ══════════════════════════════════════════════════════════
+// PŘÍJEMKA ERPET — záložka epri
+// ══════════════════════════════════════════════════════════
+let _epriPendingImages = [];
+
+function epriGetApiKey(){ return document.getElementById('inv-api-key')?.value.trim()||''; }
+
+function epriUpdatePills(){
+  const key = epriGetApiKey();
+  const count = Object.keys(_productMap).length;
+  document.getElementById('epri-key-pill').textContent = key ? 'API klíč: ✓' : 'API klíč: ✗';
+  document.getElementById('epri-key-pill').className = 'status-pill ' + (key ? 'ok' : 'nok');
+  document.getElementById('epri-prod-pill').textContent = count ? `Produkty: ${count}` : 'Produkty: ✗';
+  document.getElementById('epri-prod-pill').className = 'status-pill ' + (count ? 'ok' : 'nok');
+  document.getElementById('epri-read-btn').disabled = !(_epriPendingImages.length && key);
+}
+
+function epriToggleSettings(){
+  const body = document.getElementById('epri-settings-body');
+  const arrow = document.getElementById('epri-settings-arrow');
+  const open = body.style.display !== 'none';
+  body.style.display = open ? 'none' : 'block';
+  arrow.textContent = open ? '▼' : '▲';
+}
+
+function epriHandlePdfDrop(e){
+  e.preventDefault(); document.getElementById('epri-pdf-drop').classList.remove('over');
+  const f = e.dataTransfer.files[0]; if(f) vydLoadProductPdf({target:{files:[f]}},'epri');
+}
+
+function epriHandlePhotoDrop(e){
+  e.preventDefault(); document.getElementById('epri-photo-drop').classList.remove('over');
+  epriAddImagesToQueue(Array.from(e.dataTransfer.files));
+}
+function epriHandlePhotoFile(e){
+  epriAddImagesToQueue(Array.from(e.target.files||[]));
+  e.target.value='';
+}
+function epriAddImagesToQueue(files){
+  for(const f of files){
+    if(/^image\//.test(f.type)||/\.(jpg|jpeg|png|webp)$/i.test(f.name)) _epriPendingImages.push(f);
+  }
+  epriRenderImageQueue();
+}
+function epriRemoveImageFromQueue(idx){ _epriPendingImages.splice(idx,1); epriRenderImageQueue(); }
+function epriRenderImageQueue(){
+  const wrap = document.getElementById('epri-photo-queue-wrap');
+  const drop = document.getElementById('epri-photo-drop');
+  if(!_epriPendingImages.length){
+    wrap.style.display='none'; wrap.innerHTML='';
+    drop.innerHTML=`<svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>
+      <polyline points="21,15 16,10 5,21"/></svg>
+      Přetáhněte fotografie (JPG, PNG) nebo PDF sem`;
+    epriUpdatePills(); return;
+  }
+  let loaded=0; const urls=new Array(_epriPendingImages.length).fill('');
+  _epriPendingImages.forEach((f,i)=>{
+    const r=new FileReader(); r.onload=ev=>{ urls[i]=ev.target.result;
+      if(++loaded===_epriPendingImages.length){
+        const thumbs=urls.map((u,i)=>`<div style="position:relative;display:inline-block">
+          <img src="${u}" style="height:60px;border-radius:5px;display:block;object-fit:cover">
+          <button onclick="epriRemoveImageFromQueue(${i})"
+            style="position:absolute;top:-7px;right:-7px;width:20px;height:20px;border-radius:50%;border:none;background:#e74c3c;color:#fff;font-size:13px;line-height:1;cursor:pointer;padding:0">×</button>
+          </div>`).join('');
+        wrap.innerHTML=`<div style="display:flex;flex-wrap:wrap;gap:8px;padding:4px">${thumbs}</div>
+          <div style="font-size:13px;color:#555;margin-top:6px">${_epriPendingImages.length} fotografi${_epriPendingImages.length>1?'e':'e'} — přidejte další nebo spusťte čtení AI</div>`;
+        wrap.style.display='block';
+        drop.innerHTML=`<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Přidat další fotografie`;
+        epriUpdatePills();
+      }
+    }; r.readAsDataURL(f);
+  });
+}
+
+async function epriReadWithAI(){
+  const apiKey = epriGetApiKey();
+  if(!apiKey){ alert('Nastavte nejprve Claude API klíč v záložce Faktura PRECIOSA.'); return; }
+  if(!_epriPendingImages.length){ alert('Nejprve nahrajte fotografii.'); return; }
+  const loading = document.getElementById('epri-ai-loading');
+  const btn = document.getElementById('epri-read-btn');
+  const statusEl = document.getElementById('epri-ai-status');
+  loading.style.display='block'; btn.disabled=true;
+  hideMsg('epri-error-box');
+  try {
+    statusEl.textContent='Připravuji obrázky...';
+    const imageData = await Promise.all(_epriPendingImages.map(f=>vydFileToBase64(f)));
+    statusEl.textContent='Odesílám do Claude AI...';
+    const content = imageData.map(img=>({type:'image',source:{type:'base64',media_type:img.media_type,data:img.data}}));
+    content.push({type:'text',text:VYD_PROMPT});
+    const resp = await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true','content-type':'application/json'},
+      body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:2048,messages:[{role:'user',content}]})
+    });
+    if(!resp.ok){ const err=await resp.json().catch(()=>({})); throw new Error(err.error?.message||`HTTP ${resp.status}`); }
+    statusEl.textContent='Parsování odpovědi...';
+    const data = await resp.json();
+    const rawText = data.content?.find(b=>b.type==='text')?.text||'';
+    const jsonMatch = rawText.match(/\[[\s\S]*\]/);
+    if(!jsonMatch) throw new Error('AI nevrátilo platný JSON. Odpověď: '+rawText.substring(0,200));
+    const aiItems = JSON.parse(jsonMatch[0]);
+    loading.style.display='none';
+    epriBuildReviewTable(aiItems);
+    document.getElementById('epri-step1-section').style.display='none';
+    document.getElementById('epri-step2-section').style.display='block';
+    document.getElementById('epri-step3-section').style.display='none';
+    epriSetStep(2);
+    window.scrollTo({top:0,behavior:'smooth'});
+  } catch(err){
+    loading.style.display='none'; btn.disabled=false;
+    showMsg('epri-error-box','epri-error-list',['Chyba při komunikaci s AI: '+err.message]);
+  }
+}
+
+function epriBuildReviewTable(aiItems){
+  const tbody = document.getElementById('epri-review-tbody'); tbody.innerHTML='';
+  const unknown = [];
+  aiItems.forEach((item,idx)=>{
+    const match = vydMatchCode(item.code||'');
+    if(!match.found && item.code) unknown.push(item.code);
+    epriAppendRow(tbody, idx+1, item.code||'', match, item.quantity||1);
+  });
+  const warnEl = document.getElementById('epri-unknown-warn');
+  if(warnEl){
+    if(unknown.length){
+      warnEl.innerHTML=`⚠ ${unknown.length} kód${unknown.length>1?'y nebyly':'nebyl'} nalezen${unknown.length>1?'y':'0'} v databázi: ${unknownCodesSpans(unknown)}`;
+      warnEl.style.display='block';
+    } else { warnEl.style.display='none'; }
+  }
+}
+
+function epriAppendRow(tbody, num, rawCode, match, qty){
+  const tr = document.createElement('tr');
+  const nameVal = match.name==='—'?'':match.name;
+  tr.innerHTML=`
+    <td style="color:#aaa;font-size:0.8rem">${num}</td>
+    <td><input type="text" class="code-input ${match.found?'ok':'nok'}" value="${esc(rawCode)}" onchange="epriRowCodeChanged(this)" style="width:100%"></td>
+    <td><input type="text" class="name-input" value="${esc(nameVal)}" placeholder="název" style="width:100%"></td>
+    <td><input type="number" class="qty-input" value="${parseFloat(qty)||1}" min="0.1" step="1"></td>
+    <td><span class="tag ${match.found?'ok':'err'}">${match.found?'✓':'✗'}</span></td>
+    <td style="white-space:nowrap">
+      <button class="btn-sm" onclick="epriMoveRow(this.closest('tr'),-1)" title="Nahoru" style="padding:1px 5px;font-size:11px;cursor:pointer">↑</button>
+      <button class="btn-sm" onclick="epriMoveRow(this.closest('tr'),1)" title="Dolů" style="padding:1px 5px;font-size:11px;cursor:pointer">↓</button>
+      <button class="btn-del" onclick="this.closest('tr').remove();epriRenumber()">×</button>
+    </td>`;
+  tbody.appendChild(tr);
+}
+
+function epriRowCodeChanged(input){
+  const tr = input.closest('tr');
+  const match = vydMatchCode(input.value.trim());
+  input.className = 'code-input '+(match.found?'ok':'nok');
+  const nameInput = tr.cells[2].querySelector('input');
+  if(nameInput) nameInput.value = match.name==='—'?'':match.name;
+  tr.cells[4].innerHTML = match.found?'<span class="tag ok">✓</span>':'<span class="tag err">✗</span>';
+}
+
+function epriMoveRow(tr, dir){
+  const tbody = tr.closest('tbody');
+  if(dir===-1 && tr.previousElementSibling) tbody.insertBefore(tr, tr.previousElementSibling);
+  else if(dir===1 && tr.nextElementSibling) tbody.insertBefore(tr.nextElementSibling, tr);
+  epriRenumber();
+}
+
+function epriAddRow(){
+  const tbody = document.getElementById('epri-review-tbody');
+  epriAppendRow(tbody, tbody.rows.length+1, '', {found:false,code:'',name:'—'}, 1);
+  tbody.lastElementChild.querySelector('.code-input').focus();
+}
+
+function epriRenumber(){
+  [...document.getElementById('epri-review-tbody').rows].forEach((tr,i)=>{ tr.cells[0].textContent=i+1; });
+}
+
+function epriSetStep(n){
+  for(let i=1;i<=3;i++) document.getElementById(`epri-step${i}`).className='step'+(i<n?' done':i===n?' active':'');
+  for(let i=1;i<=2;i++) document.getElementById(`epri-line${i}`).className='step-line'+(i<n?' done':'');
+}
+function epriSetToday(){
+  const t=new Date();
+  document.getElementById('epri-date').value=`${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,'0')}-${String(t.getDate()).padStart(2,'0')}`;
+}
+function epriResetToStep1(){
+  document.getElementById('epri-step1-section').style.display='block';
+  document.getElementById('epri-step2-section').style.display='none';
+  document.getElementById('epri-step3-section').style.display='none';
+  document.getElementById('epri-read-btn').disabled=false;
+  document.getElementById('epri-ai-loading').style.display='none';
+  epriSetStep(1); window.scrollTo({top:0,behavior:'smooth'});
+}
+function epriResetToStep2(){
+  document.getElementById('epri-step2-section').style.display='block';
+  document.getElementById('epri-step3-section').style.display='none';
+  epriSetStep(2); window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function generateErpetPrijemkaXML(number, date, items){
+  const itemsXml = items.map(item=>{
+    const norm = normalizeCode(item.code);
+    const fromMap = _productMap[norm];
+    const finalCode = fromMap ? fromMap.code : item.code;
+    return `    <pri:prijemkaItem>
+        <pri:quantity>${item.qty.toFixed(1)}</pri:quantity>
+        <pri:stockItem>
+            <typ:store>
+                <typ:ids>Komisní</typ:ids>
+            </typ:store>
+            <typ:stockItem>
+                <typ:EAN>E${esc(finalCode)}</typ:EAN>
+            </typ:stockItem>
+        </pri:stockItem>
+    </pri:prijemkaItem>`;
+  }).join('\n');
+  return `<?xml version="1.0" encoding="Windows-1250"?>
+<dat:dataPack xmlns:dat="http://www.stormware.cz/schema/version_2/data.xsd" version="2.0" id="Usr01" ico="60279354" key="7c72fd24-37c8-477c-9207-1b4964a5db8a" programVersion="14102.5 (19.11.2025)" application="Transformace" note="Import příjemky Komisní sklad Erpet">
+<dat:dataPackItem version="2.0" id="Usr01 (001)">
+<pri:prijemka xmlns:pri="http://www.stormware.cz/schema/version_2/prijemka.xsd" version="2.0">
+<pri:prijemkaHeader xmlns:typ="http://www.stormware.cz/schema/version_2/type.xsd">
+    <pri:number>
+        <typ:numberRequested>${esc(number)}</typ:numberRequested>
+    </pri:number>
+    <pri:date>${date}</pri:date>
+    <pri:isExecuted>true</pri:isExecuted>
+</pri:prijemkaHeader>
+<pri:prijemkaDetail xmlns:typ="http://www.stormware.cz/schema/version_2/type.xsd">
+${itemsXml}
+</pri:prijemkaDetail>
+</pri:prijemka>
+</dat:dataPackItem>
+</dat:dataPack>`;
+}
+
+function epriGenerate(){
+  const number = document.getElementById('epri-number').value.trim();
+  const date   = document.getElementById('epri-date').value;
+  const errs = [];
+  if(!number) errs.push('Zadejte číslo příjemky.');
+  if(!date)   errs.push('Zadejte datum příjemky.');
+  if(errs.length){ showMsg('epri-review-error','epri-review-error-list',errs); return; }
+  hideMsg('epri-review-error');
+  const tbody = document.getElementById('epri-review-tbody');
+  const rows = [...tbody.rows];
+  if(!rows.length){ showMsg('epri-review-error','epri-review-error-list',['Tabulka je prázdná.']); return; }
+  const items = rows.map(tr=>({
+    code: tr.cells[1].querySelector('input').value.trim(),
+    qty:  parseFloat(tr.cells[3].querySelector('input').value)||1
+  })).filter(it=>it.code);
+  if(!items.length){ showMsg('epri-review-error','epri-review-error-list',['Žádné platné řádky.']); return; }
+  document.getElementById('epri-sum-number').textContent = number;
+  document.getElementById('epri-sum-date').textContent = date.split('-').reverse().join('.');
+  document.getElementById('epri-sum-count').textContent = items.length;
+  document.getElementById('epri-xml-filename').textContent = `prijemka_erpet_${number}.xml`;
+  document.getElementById('epri-xml-output').value = generateErpetPrijemkaXML(number, date, items);
+  window._lastEpriNumber = number;
+  document.getElementById('epri-step2-section').style.display='none';
+  document.getElementById('epri-step3-section').style.display='block';
+  epriSetStep(3);
+  const warnBox = document.getElementById('epri-xml-codes-warn');
+  const warnList = document.getElementById('epri-xml-codes-list');
+  if(Object.keys(_productMap).length>0){
+    const unknown = items.filter(it=>!_productMap[normalizeCode(it.code)]).map(it=>it.code);
+    if(unknown.length){
+      warnList.innerHTML = unknown.map(c=>`<li>Kód <strong>${esc(c)}</strong> nebyl nalezen — EAN bude E${esc(c)}.</li>`).join('');
+      warnBox.style.display='block';
+    } else { warnBox.style.display='none'; }
+  } else { warnBox.style.display='none'; }
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function epriDownloadXml(){
+  const content = document.getElementById('epri-xml-output').value;
+  const blob = new Blob([encodeW1250(content)],{type:'application/xml'});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = `prijemka_erpet_${window._lastEpriNumber||'export'}.xml`; a.click();
+}
+
 // ── Init ──────────────────────────────────────────────────────────────────────
 setToday();
 vydSetToday();
+epriSetToday();
 
 // Obnovit screenshoty z mezipaměti (z minulého pokusu, který skončil chybou nebo reloadem)
 imgRestoreQueueFromCache();
