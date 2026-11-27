@@ -1118,9 +1118,16 @@ function renderItemRow(ci, ii, it, total) {
   const noCode = !it.code;
   const up = ii > 0       ? `<button class="btn-sm" style="padding:1px 4px;font-size:10px" onclick="moveItem(${ci},${ii},-1)">↑</button>` : '';
   const dn = ii < total-1 ? `<button class="btn-sm" style="padding:1px 4px;font-size:10px" onclick="moveItem(${ci},${ii},1)">↓</button>`  : '';
+  const opts = CATALOG.map(c => `<option value="${c.code}"${c.code===it.code?' selected':''}>${c.code} — ${c.name}</option>`).join('');
   return `<tr>
-    <td style="padding:3px 4px"><input type="text" value="${esc(it.code)}" class="${noCode?'warn':''}" placeholder="kód"
-      style="width:100%;padding:3px 5px;font-size:0.78rem" onchange="updateItem(${ci},${ii},'code',this.value)"></td>
+    <td style="padding:3px 4px">
+      <input type="text" value="${esc(it.code)}" class="${noCode?'warn':''}" placeholder="kód"
+        style="width:100%;padding:3px 5px;font-size:0.78rem" onchange="updateItem(${ci},${ii},'code',this.value)">
+      <select onchange="selectCatalogItem(${ci},${ii},this.value);this.value=''"
+        style="width:100%;padding:2px 4px;font-size:0.72rem;margin-top:2px;border:1px solid #c5d8f5;border-radius:3px;background:#f5f9ff;color:#1a3a5c;cursor:pointer">
+        <option value="">▼ změnit z katalogu</option>${opts}
+      </select>
+    </td>
     <td style="padding:3px 4px"><input type="text" value="${esc(it.name)}" placeholder="název"
       style="width:100%;padding:3px 5px;font-size:0.78rem" onchange="updateItem(${ci},${ii},'name',this.value)"></td>
     <td style="padding:3px 4px"><input type="text" inputmode="numeric" value="${it.qty}"
