@@ -470,7 +470,10 @@
 
   <!-- ══ VYD KROK 3: XML ══ -->
   <div id="vyd-step3-section" style="display:none">
-    <button class="btn-reset" onclick="vydResetToStep2()">← Zpět na kontrolu</button>
+    <div style="display:flex;align-items:center;gap:12px;background:#eaf4ff;border:1.5px solid #2a7ae2;border-radius:8px;padding:10px 16px;margin-bottom:14px">
+      <button onclick="vydResetToStep2()" style="background:#2a7ae2;color:#fff;border:none;border-radius:6px;padding:8px 16px;font-size:0.88rem;font-weight:700;cursor:pointer;white-space:nowrap">← Zpět na kontrolu</button>
+      <span style="font-size:0.85rem;color:#1a3a5c">Vaše úpravy budou zachovány — můžete je dále upravit a znovu vygenerovat XML.</span>
+    </div>
     <div class="msg-box warning" id="vyd-xml-codes-warn" style="display:none"><strong>⚠ Tyto kódy nebyly nalezeny v databázi — v XML jsou vloženy tak jak jsou:</strong><ul id="vyd-xml-codes-list" style="margin-top:6px"></ul></div>
     <div class="card">
       <h2>Přehled</h2>
@@ -769,7 +772,10 @@
 
   <!-- KROK 3 -->
   <div id="epri-step3-section" style="display:none">
-    <button class="btn-reset" onclick="epriResetToStep2()">← Zpět na kontrolu</button>
+    <div style="display:flex;align-items:center;gap:12px;background:#eaf4ff;border:1.5px solid #2a7ae2;border-radius:8px;padding:10px 16px;margin-bottom:14px">
+      <button onclick="epriResetToStep2()" style="background:#2a7ae2;color:#fff;border:none;border-radius:6px;padding:8px 16px;font-size:0.88rem;font-weight:700;cursor:pointer;white-space:nowrap">← Zpět na kontrolu</button>
+      <span style="font-size:0.85rem;color:#1a3a5c">Vaše úpravy budou zachovány — můžete je dále upravit a znovu vygenerovat XML.</span>
+    </div>
     <div class="msg-box warning" id="epri-xml-codes-warn" style="display:none"><strong>⚠ Tyto kódy nebyly nalezeny v databázi — v XML jsou vloženy tak jak jsou:</strong><ul id="epri-xml-codes-list" style="margin-top:6px"></ul></div>
     <div class="card">
       <h2>Přehled</h2>
