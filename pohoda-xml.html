@@ -360,7 +360,6 @@
       </h2>
       <div style="display:flex;gap:8px;align-items:center">
         <span id="vyd-key-pill" class="status-pill nok">API klíč: ✗</span>
-        <span id="vyd-prod-pill" class="status-pill nok">Produkty: ✗</span>
         <span id="vyd-settings-arrow" style="color:#aab8c8;font-size:1.1rem">▼</span>
       </div>
     </div>
@@ -371,24 +370,12 @@
           <p class="hint" style="margin:0;color:#2a7ae2">🔑 Používá se stejný API klíč jako v záložce <strong>Faktura PRECIOSA</strong> — zadejte ho tam.</p>
         </div>
       </div>
-      <div class="form-group" style="margin-top:14px">
-        <label>Produktový seznam (Skladové_zásoby.pdf z POHODY)</label>
-        <div class="drop-zone small" id="vyd-pdf-drop"
-             onclick="document.getElementById('vyd-pdf-input').click()"
-             ondragover="event.preventDefault();this.classList.add('over')"
-             ondragleave="this.classList.remove('over')"
-             ondrop="vydHandlePdfDrop(event)">
-          Přetáhněte PDF nebo klikněte pro výběr
-        </div>
-        <input type="file" id="vyd-pdf-input" accept=".pdf" style="display:none" onchange="vydLoadProductPdf(event)">
-        <div class="loading-box" id="vyd-pdf-loading">
-          <div class="spinner"></div>
-          <div id="vyd-pdf-progress-text">Načítám produktový seznam...</div>
-          <div class="progress-bar-wrap"><div class="progress-bar-fill" id="vyd-pdf-progress-bar" style="width:0%"></div></div>
-        </div>
-        <p class="hint" id="vyd-product-status">Žádný seznam není načten. Bez něj nebude fungovat párování kódů.</p>
-      </div>
     </div>
+    <!-- hidden inputs kept for compatibility -->
+    <input type="file" id="vyd-pdf-input" accept=".pdf" style="display:none" onchange="vydLoadProductPdf(event)">
+    <div id="vyd-pdf-loading" style="display:none"><div class="spinner"></div><div id="vyd-pdf-progress-text"></div><div class="progress-bar-wrap"><div class="progress-bar-fill" id="vyd-pdf-progress-bar" style="width:0%"></div></div></div>
+    <span id="vyd-prod-pill" style="display:none"></span>
+    <span id="vyd-product-status" style="display:none"></span>
   </div>
 
   <!-- Krokový indikátor -->
@@ -682,7 +669,6 @@
       </h2>
       <div style="display:flex;gap:8px;align-items:center">
         <span id="epri-key-pill" class="status-pill nok">API klíč: ✗</span>
-        <span id="epri-prod-pill" class="status-pill nok">Produkty: ✗</span>
         <span id="epri-settings-arrow" style="color:#aab8c8;font-size:1.1rem">▼</span>
       </div>
     </div>
@@ -693,19 +679,10 @@
           <p class="hint" style="margin:0;color:#2a7ae2">🔑 Používá se stejný API klíč jako v záložce <strong>Faktura PRECIOSA</strong> — zadejte ho tam.</p>
         </div>
       </div>
-      <div class="form-group" style="margin-top:14px">
-        <label>Produktový seznam (Skladové_zásoby.pdf z POHODY)</label>
-        <div class="drop-zone small" id="epri-pdf-drop"
-             onclick="document.getElementById('epri-pdf-input').click()"
-             ondragover="event.preventDefault();this.classList.add('over')"
-             ondragleave="this.classList.remove('over')"
-             ondrop="epriHandlePdfDrop(event)">
-          Přetáhněte PDF nebo klikněte pro výběr
-        </div>
-        <input type="file" id="epri-pdf-input" accept=".pdf" style="display:none" onchange="vydLoadProductPdf(event,'epri')">
-        <p class="hint" id="epri-product-status">Žádný seznam není načten. Bez něj nebude fungovat párování kódů.</p>
-      </div>
     </div>
+    <input type="file" id="epri-pdf-input" accept=".pdf" style="display:none">
+    <span id="epri-prod-pill" style="display:none"></span>
+    <span id="epri-product-status" style="display:none"></span>
   </div>
 
   <!-- Krokový indikátor -->
