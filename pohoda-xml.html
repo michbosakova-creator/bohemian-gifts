@@ -3525,7 +3525,7 @@ function vydDownloadXml(){
 // ══════════════════════════════════════════════════════════
 let _epriPendingImages = [];
 
-function epriGetApiKey(){ return document.getElementById('inv-api-key')?.value.trim()||''; }
+function epriGetApiKey(){ return localStorage.getItem('vydejka_api_key')||document.getElementById('inv-api-key')?.value.trim()||''; }
 
 function epriUpdatePills(){
   const key = epriGetApiKey();
