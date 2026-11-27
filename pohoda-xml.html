@@ -723,6 +723,12 @@
         Přetáhněte fotografie (JPG, PNG) nebo PDF sem
       </div>
       <input type="file" id="epri-photo-input" accept="image/jpeg,image/png,image/webp,application/pdf" style="display:none" multiple onchange="epriHandlePhotoFile(event)">
+      <div id="epri-paste-zone" contenteditable="true" spellcheck="false"
+           style="margin-top:10px;border:1.5px dashed #c5d8f5;border-radius:7px;padding:10px 14px;font-size:0.85rem;color:#aaa;cursor:pointer;user-select:none;min-height:36px;text-align:center"
+           onpaste="epriCatchPaste(event);return false"
+           onfocus="this.style.borderColor='#1a3a5c';this.style.color='#1a3a5c';this.textContent='Teď Ctrl+V…'"
+           onblur="this.style.borderColor='#c5d8f5';this.style.color='#aaa';this.textContent='📋 Screenshot: klikněte sem → Ctrl+V'"
+           onclick="this.focus()">📋 Screenshot: klikněte sem → Ctrl+V</div>
       <div id="epri-photo-queue-wrap" style="display:none;margin-top:10px"></div>
       <div class="loading-box" id="epri-ai-loading">
         <div class="spinner"></div>
@@ -4135,6 +4141,22 @@ function invCatchPaste(e){
       const reset = () => { z.innerHTML = ''; z.textContent = '📋 Klikněte → Ctrl+V'; z.style.borderColor='#c5d8f5'; z.style.color='#aaa'; };
       reset();
       setTimeout(reset, 0);
+      return;
+    }
+  }
+}
+
+function epriCatchPaste(e){
+  e.preventDefault();
+  const items = e.clipboardData && e.clipboardData.items;
+  if(!items) return;
+  for(const item of items){
+    if(item.type.startsWith('image/')){
+      const file = item.getAsFile();
+      if(file) epriAddImagesToQueue([file]);
+      const z = document.getElementById('epri-paste-zone');
+      const reset = () => { z.innerHTML=''; z.textContent='📋 Screenshot: klikněte sem → Ctrl+V'; z.style.borderColor='#c5d8f5'; z.style.color='#aaa'; };
+      reset(); setTimeout(reset,0);
       return;
     }
   }
