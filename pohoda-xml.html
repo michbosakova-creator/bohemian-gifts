@@ -3150,7 +3150,7 @@ function vydHandlePhotoFile(e){
 
 function vydAddImagesToQueue(files){
   for(const f of files){
-    if(/^image\//.test(f.type)||/\.(jpg|jpeg|png|webp)$/i.test(f.name)) _vydPendingImages.push(f);
+    if(/^image\//.test(f.type)||/\.(jpg|jpeg|png|webp)$/i.test(f.name)||f.type==='application/pdf'||/\.pdf$/i.test(f.name)) _vydPendingImages.push(f);
   }
   vydRenderImageQueue();
 }
@@ -3258,10 +3258,9 @@ async function vydReadWithAI(){
     // Konvertuj File objekty na base64
     const imageData = await Promise.all(_vydPendingImages.map(f=>vydFileToBase64(f)));
     statusEl.textContent='Odesílám do Claude AI...';
-    const content=imageData.map(img=>({
-      type:'image',
-      source:{type:'base64',media_type:img.media_type,data:img.data}
-    }));
+    const content=imageData.map(img=>img.media_type==='application/pdf'
+      ? {type:'document',source:{type:'base64',media_type:'application/pdf',data:img.data}}
+      : {type:'image',source:{type:'base64',media_type:img.media_type,data:img.data}});
     content.push({type:'text',text:VYD_PROMPT});
 
     const resp=await fetch('https://api.anthropic.com/v1/messages',{
@@ -3560,7 +3559,7 @@ function epriHandlePhotoFile(e){
 }
 function epriAddImagesToQueue(files){
   for(const f of files){
-    if(/^image\//.test(f.type)||/\.(jpg|jpeg|png|webp)$/i.test(f.name)) _epriPendingImages.push(f);
+    if(/^image\//.test(f.type)||/\.(jpg|jpeg|png|webp)$/i.test(f.name)||f.type==='application/pdf'||/\.pdf$/i.test(f.name)) _epriPendingImages.push(f);
   }
   epriRenderImageQueue();
 }
@@ -3610,7 +3609,9 @@ async function epriReadWithAI(){
     statusEl.textContent='Připravuji obrázky...';
     const imageData = await Promise.all(_epriPendingImages.map(f=>vydFileToBase64(f)));
     statusEl.textContent='Odesílám do Claude AI...';
-    const content = imageData.map(img=>({type:'image',source:{type:'base64',media_type:img.media_type,data:img.data}}));
+    const content = imageData.map(img=>img.media_type==='application/pdf'
+      ? {type:'document',source:{type:'base64',media_type:'application/pdf',data:img.data}}
+      : {type:'image',source:{type:'base64',media_type:img.media_type,data:img.data}});
     content.push({type:'text',text:VYD_PROMPT});
     const resp = await fetch('https://api.anthropic.com/v1/messages',{
       method:'POST',
